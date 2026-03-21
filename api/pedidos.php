@@ -187,6 +187,16 @@ function getPedido() {
     $stmt->execute([$id]);
     $pedido['costura'] = $stmt->fetch();
     
+    // Obtener adicionales de talla
+    $stmt = $db->prepare("SELECT * FROM adicionales_talla WHERE pedido_id = ?");
+    $stmt->execute([$id]);
+    $pedido['adicionales_talla'] = $stmt->fetchAll();
+    
+    // Obtener merchandising
+    $stmt = $db->prepare("SELECT * FROM merchandising WHERE pedido_id = ?");
+    $stmt->execute([$id]);
+    $pedido['merchandising'] = $stmt->fetchAll();
+    
     // Obtener entrega
     $stmt = $db->prepare("SELECT * FROM entregas WHERE pedido_id = ?");
     $stmt->execute([$id]);
@@ -280,6 +290,40 @@ function createPedido() {
                     sanitize($kit['medias_detalles'] ?? ''),
                     intval($kit['cantidad'] ?? 1),
                     floatval($kit['precio_unitario'] ?? 0)
+                ]);
+            }
+        }
+        
+        // Insertar adicionales de talla si existen
+        if (!empty($input['adicionales']) && is_array($input['adicionales'])) {
+            $stmtAdicional = $db->prepare("INSERT INTO adicionales_talla (
+                pedido_id, talla, cantidad, precio_unitario
+            ) VALUES (?, ?, ?, ?)");
+            
+            foreach ($input['adicionales'] as $adicional) {
+                $stmtAdicional->execute([
+                    $pedidoId,
+                    sanitize($adicional['talla'] ?? ''),
+                    intval($adicional['cantidad'] ?? 1),
+                    floatval($adicional['precio_unitario'] ?? 0)
+                ]);
+            }
+        }
+        
+        // Insertar merchandising si existe
+        if (!empty($input['merchandising']) && is_array($input['merchandising'])) {
+            $stmtMerch = $db->prepare("INSERT INTO merchandising (
+                pedido_id, articulo, cantidad, precio_unitario, es_regalo, especificaciones
+            ) VALUES (?, ?, ?, ?, ?, ?)");
+            
+            foreach ($input['merchandising'] as $merch) {
+                $stmtMerch->execute([
+                    $pedidoId,
+                    sanitize($merch['articulo'] ?? ''),
+                    intval($merch['cantidad'] ?? 1),
+                    floatval($merch['precio_unitario'] ?? 0),
+                    intval($merch['es_regalo'] ?? 0),
+                    sanitize($merch['especificaciones'] ?? '')
                 ]);
             }
         }
