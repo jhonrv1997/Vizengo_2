@@ -80,13 +80,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Fecha de entrega
         $fechaEntrega = !empty($_POST['fecha_entrega']) ? $_POST['fecha_entrega'] : null;
         
+        // Hora de entrega
+        $horaEntrega = !empty($_POST['hora_entrega']) ? $_POST['hora_entrega'] : null;
+        
         // Insertar pedido
         $stmt = $db->prepare("INSERT INTO pedidos (
             codigo, cliente_id, usuario_id, tipo_contrato, lugar_entrega,
             direccion_envio, vendedor_asignado, celular_cliente,
             observaciones_generales, observaciones_diseno,
-            fecha_entrega, subtotal, adelanto, saldo, estado_contrato, estado_general
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'completo', 'en_proceso')");
+            fecha_entrega, hora_entrega, subtotal, adelanto, saldo, estado_contrato, estado_general
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'completo', 'en_proceso')");
         
         $stmt->execute([
             $codigo,
@@ -100,6 +103,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             sanitize($_POST['observaciones_generales'] ?? ''),
             sanitize($_POST['observaciones_diseno'] ?? ''),
             $fechaEntrega,
+            $horaEntrega,
             $subtotal,
             $adelanto,
             $saldo
@@ -397,10 +401,16 @@ $fechaHoy = str_replace(array_keys($meses), array_values($meses), $fechaHoy);
                                     <input type="tel" name="cliente_celular" class="field-ctrl" placeholder="999-999-999">
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="field-group">
                                     <label class="field-lbl">Fecha de Entrega</label>
                                     <input type="date" name="fecha_entrega" class="field-ctrl" min="<?php echo date('Y-m-d'); ?>">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="field-group">
+                                    <label class="field-lbl">Hora de Entrega</label>
+                                    <input type="time" name="hora_entrega" class="field-ctrl">
                                 </div>
                             </div>
                             <div class="col-12">
