@@ -35,21 +35,18 @@ $vendedores = $stmt->fetchAll();
 $stmt = $db->query("SELECT DISTINCT nombre FROM clientes ORDER BY nombre ASC LIMIT 50");
 $clientesFrecuentes = $stmt->fetchAll();
 
-// Obtener pedidos de la semana actual para disponibilidad
+// Obtener pedidos de los próximos 7 días para disponibilidad
 $pedidosSemana = [];
 try {
-    // Calcular el lunes de la semana actual
+    // Calcular desde hoy hasta los próximos 7 días
     $hoy = new DateTime();
-    $diaSemana = $hoy->format('N'); // 1=Lunes, 7=Domingo
-    $lunes = clone $hoy;
-    $lunes->modify('-' . ($diaSemana - 1) . ' days');
-    $domingo = clone $lunes;
-    $domingo->modify('+6 days');
+    $hoyStr = $hoy->format('Y-m-d');
     
-    $lunesStr = $lunes->format('Y-m-d');
-    $domingoStr = $domingo->format('Y-m-d');
+    $finSemana = clone $hoy;
+    $finSemana->modify('+6 days'); // Hoy + 6 días = 7 días totales
+    $finSemanaStr = $finSemana->format('Y-m-d');
     
-    // Consultar pedidos agrupados por fecha de entrega en la semana
+    // Consultar pedidos agrupados por fecha de entrega en los próximos 7 días
     $stmt = $db->prepare("
         SELECT fecha_entrega, COUNT(*) as cantidad 
         FROM pedidos 
@@ -57,7 +54,7 @@ try {
         AND estado_general NOT IN ('cancelado', 'entregado')
         GROUP BY fecha_entrega
     ");
-    $stmt->execute([$lunesStr, $domingoStr]);
+    $stmt->execute([$hoyStr, $finSemanaStr]);
     $resultados = $stmt->fetchAll();
     
     // Crear array con fechas como keys
@@ -739,44 +736,42 @@ $fechaHoy = str_replace(array_keys($meses), array_values($meses), $fechaHoy);
                 <!-- Disponibilidad Semanal -->
                 <div class="card-v" style="margin-bottom:16px;">
                     <div class="card-v-header">
-                        <h5 class="card-v-title"><i class="fas fa-calendar-week" style="margin-right:8px;"></i>Disponibilidad Semanal</h5>
+                        <h5 class="card-v-title"><i class="fas fa-calendar-week" style="margin-right:8px;"></i>Disponibilidad (Próximos 7 días)</h5>
                     </div>
                     <div class="card-v-body">
-                        <p style="font-size:.8rem;color:var(--muted);margin-bottom:14px;"><i class="fas fa-info-circle" style="margin-right:4px;"></i>Pedidos ya registrados esta semana:</p>
+                        <p style="font-size:.8rem;color:var(--muted);margin-bottom:14px;"><i class="fas fa-info-circle" style="margin-right:4px;"></i>Pedidos ya registrados:</p>
                         <div class="cal-grid">
                             <?php
                             // Array de días en español
-                            $diasCortos = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+                            $diasCortos = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
                             
-                            // Calcular el lunes de la semana actual
+                            // Mostrar los próximos 7 días desde hoy
                             $hoyCal = new DateTime();
-                            $diaSemanaCal = $hoyCal->format('N');
-                            $lunesCal = clone $hoyCal;
-                            $lunesCal->modify('-' . ($diaSemanaCal - 1) . ' days');
                             
                             for ($i = 0; $i < 7; $i++) {
-                                $fecha = clone $lunesCal;
+                                $fecha = clone $hoyCal;
                                 $fecha->modify("+{$i} days");
                                 $fechaStr = $fecha->format('Y-m-d');
                                 $diaNum = $fecha->format('d');
+                                $diaSemanaNum = (int)$fecha->format('w'); // 0=Dom, 6=Sáb
                                 $cantidad = isset($pedidosSemana[$fechaStr]) ? $pedidosSemana[$fechaStr] : 0;
                                 
                                 // Determinar color del badge según cantidad
                                 if ($cantidad == 0) {
                                     $badgeClass = 'cb-gris';
-                                } elseif ($cantidad <= 12) {
+                                } elseif ($cantidad <= 3) {
                                     $badgeClass = 'cb-verde';
-                                } elseif ($cantidad <= 15) {
+                                } elseif ($cantidad <= 7) {
                                     $badgeClass = 'cb-amarillo';
                                 } else {
                                     $badgeClass = 'cb-rojo';
                                 }
                                 
-                                // Verificar si es hoy
-                                $esHoy = ($fechaStr === date('Y-m-d')) ? ' selected' : '';
+                                // El primer día (hoy) aparece seleccionado por defecto
+                                $esHoy = ($i === 0) ? ' selected' : '';
                                 
                                 echo '<div class="cal-day' . $esHoy . '" onclick="selDia(this)" data-fecha="' . $fechaStr . '">';
-                                echo '<div class="cal-dn">' . $diasCortos[$i] . '</div>';
+                                echo '<div class="cal-dn">' . $diasCortos[$diaSemanaNum] . '</div>';
                                 echo '<div class="cal-num">' . $diaNum . '</div>';
                                 echo '<span class="cal-badge ' . $badgeClass . '">' . $cantidad . '</span>';
                                 echo '</div>';
