@@ -27,10 +27,6 @@ if (!in_array($user['rol'], ['vendedor', 'administrador'])) {
 
 $db = getDB();
 
-// Obtener vendedores para el select
-$stmt = $db->query("SELECT id, nombre FROM usuarios WHERE rol IN ('vendedor', 'administrador') AND activo = 1 ORDER BY nombre");
-$vendedores = $stmt->fetchAll();
-
 // Obtener clientes frecuentes
 $stmt = $db->query("SELECT DISTINCT nombre FROM clientes ORDER BY nombre ASC LIMIT 50");
 $clientesFrecuentes = $stmt->fetchAll();
@@ -403,18 +399,13 @@ $fechaHoy = str_replace(array_keys($meses), array_values($meses), $fechaHoy);
                                     <input type="text" name="direccion_envio" id="direccionEnvio" class="field-ctrl mt-2" placeholder="Especifique agencia o dirección..." style="display:none;">
                                 </div>
                             </div>
-                            <div class="col-md-4">
-                                <div class="field-group">
-                                    <label class="field-lbl">Vendedor</label>
-                                    <select class="field-ctrl" name="vendedor_asignado" id="vendedorSelect">
-                                        <?php foreach ($vendedores as $v): ?>
-                                        <option value="<?php echo htmlspecialchars($v['nombre']); ?>" <?php echo $v['nombre'] === $user['nombre'] ? 'selected' : ''; ?>>
-                                            <?php echo htmlspecialchars($v['nombre']); ?>
-                                        </option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
-                            </div>
+							<div class="col-md-4">
+								<div class="field-group">
+									<label class="field-lbl">Vendedor</label>
+									<input type="hidden" name="vendedor_asignado" value="<?php echo htmlspecialchars($user['nombre']); ?>">
+									<input type="text" class="field-ctrl" value="<?php echo htmlspecialchars($user['nombre']); ?>" readonly style="background:#f8f9fa;cursor:not-allowed;">
+								</div>
+							</div>
                             <div class="col-md-8">
                                 <div class="field-group">
                                     <label class="field-lbl">Cliente</label>
