@@ -51,6 +51,12 @@ if ($pedidoId === 0) {
         exit();
     }
     
+    // Obtener la cantidad total de kits (suma del campo cantidad)
+    $stmt = $db->prepare("SELECT COALESCE(SUM(cantidad), 0) as total_kits FROM kits WHERE pedido_id = ?");
+    $stmt->execute([$pedidoId]);
+    $result = $stmt->fetch();
+    $cantidadMaximaKits = intval($result['total_kits']);
+    
     // Cargar integrantes existentes
     $stmt = $db->prepare("SELECT * FROM integrantes WHERE pedido_id = ? ORDER BY id");
     $stmt->execute([$pedidoId]);
@@ -64,6 +70,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $imagenLista = $_POST['imagen_lista'] ?? '';
     
     if ($pedidoId > 0) {
+        // Obtener cantidad máxima de kits para validación
+        $stmt = $db->prepare("SELECT COALESCE(SUM(cantidad), 0) as total_kits FROM kits WHERE pedido_id = ?");
+        $stmt->execute([$pedidoId]);
+        $result = $stmt->fetch();
+        $cantidadMaximaKitsPost = intval($result['total_kits']);
+        
         $db->beginTransaction();
         try {
             // Si hay imagen de lista
@@ -87,6 +99,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Guardar integrantes de la tabla
             $integrantesData = json_decode($integrantesJson, true);
             if (!empty($integrantesData)) {
+                // Validar cantidad de integrantes según kits
+                if ($cantidadMaximaKitsPost > 0 && count($integrantesData) > $cantidadMaximaKitsPost) {
+                    throw new Exception("No se pueden registrar más de {$cantidadMaximaKitsPost} integrantes. Cantidad actual: " . count($integrantesData));
+                }
+                
                 // Eliminar anteriores
                 $stmt = $db->prepare("DELETE FROM integrantes WHERE pedido_id = ?");
                 $stmt->execute([$pedidoId]);
@@ -240,6 +257,15 @@ $tallas = ['2','4','6','8','10','12','14','16','XS','S','M','L','XL','XXL'];
 
     <?php if (isset($pedido)): ?>
     
+    <?php if (isset($error)): ?>
+    <!-- Mensaje de error -->
+    <div class="alert alert-danger alert-dismissible fade show" role="alert" style="margin-bottom:20px;">
+        <i class="fas fa-exclamation-triangle" style="margin-right:8px;"></i>
+        <?php echo htmlspecialchars($error); ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <?php endif; ?>
+    
     <form method="POST" id="formIntegrantes" enctype="multipart/form-data">
         <input type="hidden" name="pedido_id" value="<?php echo $pedido['id']; ?>">
         <input type="hidden" name="integrantes" id="integrantesJson">
@@ -334,7 +360,25 @@ $tallas = ['2','4','6','8','10','12','14','16','XS','S','M','L','XL','XXL'];
                     <div style="background:rgba(43,79,255,.06);border:1px solid rgba(43,79,255,.15);border-radius:10px;padding:16px;text-align:center;margin-bottom:16px;">
                         <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px;">Total Integrantes</div>
                         <div style="font-family:'Barlow Condensed',sans-serif;font-size:3rem;font-weight:800;color:var(--primary);line-height:1;" id="totalIntegrantes"><?php echo count($integrantes); ?></div>
+                        <?php if (isset($cantidadMaximaKits) && $cantidadMaximaKits > 0): ?>
+                        <div style="margin-top:8px;font-size:.85rem;color:var(--muted);">
+                            de <strong style="color:var(--primary);"><?php echo $cantidadMaximaKits; ?></strong> permitidos (kits)
+                        </div>
+                        <?php endif; ?>
                     </div>
+                    <?php if (isset($cantidadMaximaKits) && $cantidadMaximaKits > 0): ?>
+                    <!-- Barra de progreso -->
+                    <div style="margin-bottom:16px;">
+                        <div style="background:#e5e7eb;border-radius:10px;height:8px;overflow:hidden;">
+                            <div id="barraProgreso" style="background:linear-gradient(90deg,var(--primary),var(--success));height:100%;border-radius:10px;transition:width 0.3s;width:<?php echo min((count($integrantes) / $cantidadMaximaKits) * 100, 100); ?>%;"></div>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:.7rem;color:var(--muted);">
+                            <span>0</span>
+                            <span id="porcentajeProgreso"><?php echo round((count($integrantes) / $cantidadMaximaKits) * 100, 1); ?>%</span>
+                            <span><?php echo $cantidadMaximaKits; ?></span>
+                        </div>
+                    </div>
+                    <?php endif; ?>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
                         <div style="background:rgba(6,182,212,.08);border:2px solid rgba(6,182,212,.3);border-radius:10px;padding:12px;text-align:center;">
                             <div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:2px;"><i class="fas fa-mars" style="color:#0891b2;margin-right:4px;"></i>Varones</div>
@@ -375,6 +419,7 @@ $tallas = ['2','4','6','8','10','12','14','16','XS','S','M','L','XL','XXL'];
 <script src="assets/js/app.js"></script>
 <script>
 const tallas = <?php echo json_encode($tallas); ?>;
+const cantidadMaximaKits = <?php echo isset($cantidadMaximaKits) ? $cantidadMaximaKits : 0; ?>;
 
 function crearFila() {
     const div = document.createElement('div');
@@ -395,8 +440,26 @@ function crearFila() {
 }
 
 function agregarFila() {
+    // Verificar límite de integrantes según cantidad de kits
+    const totalActual = contarIntegrantesValidos();
+    if (cantidadMaximaKits > 0 && totalActual >= cantidadMaximaKits) {
+        alert(`No puede agregar más integrantes. El límite según los kits es de ${cantidadMaximaKits} integrantes.`);
+        return;
+    }
     document.getElementById('contenedorIntegrantes').appendChild(crearFila());
     actualizarResumen();
+}
+
+function contarIntegrantesValidos() {
+    const rows = document.querySelectorAll('.integrante-row');
+    let total = 0;
+    rows.forEach(row => {
+        const nombreInput = row.querySelector('input:first-child');
+        if (nombreInput && nombreInput.value.trim()) {
+            total++;
+        }
+    });
+    return total;
 }
 
 function eliminarFila(btn) {
@@ -421,6 +484,34 @@ function actualizarResumen() {
     document.getElementById('totalIntegrantes').textContent = total;
     document.getElementById('totalVarones').textContent = varones;
     document.getElementById('totalDamas').textContent = damas;
+    
+    // Actualizar barra de progreso si existe límite de kits
+    if (cantidadMaximaKits > 0) {
+        const porcentaje = Math.min((total / cantidadMaximaKits) * 100, 100);
+        const barraProgreso = document.getElementById('barraProgreso');
+        const porcentajeProgreso = document.getElementById('porcentajeProgreso');
+        
+        if (barraProgreso) {
+            barraProgreso.style.width = porcentaje + '%';
+            // Cambiar color si excede el límite
+            if (total > cantidadMaximaKits) {
+                barraProgreso.style.background = 'linear-gradient(90deg, #ef4444, #dc2626)';
+            } else if (total === cantidadMaximaKits) {
+                barraProgreso.style.background = 'linear-gradient(90deg, #10b981, #06d6a0)';
+            } else {
+                barraProgreso.style.background = 'linear-gradient(90deg, var(--primary), var(--success))';
+            }
+        }
+        if (porcentajeProgreso) {
+            porcentajeProgreso.textContent = porcentaje.toFixed(1) + '%';
+            // Cambiar color del texto si excede
+            if (total > cantidadMaximaKits) {
+                porcentajeProgreso.style.color = '#ef4444';
+            } else {
+                porcentajeProgreso.style.color = 'var(--muted)';
+            }
+        }
+    }
 }
 
 function toggleModoImagen() {
@@ -478,6 +569,14 @@ document.getElementById('formIntegrantes')?.addEventListener('submit', function(
             });
         }
     });
+    
+    // Validar límite de integrantes según kits
+    if (cantidadMaximaKits > 0 && integrantes.length > cantidadMaximaKits) {
+        e.preventDefault();
+        alert(`Error: Está intentando registrar ${integrantes.length} integrantes, pero el límite según los kits es de ${cantidadMaximaKits} integrantes.`);
+        return false;
+    }
+    
     document.getElementById('integrantesJson').value = JSON.stringify(integrantes);
 });
 
