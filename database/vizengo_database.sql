@@ -27,12 +27,12 @@ CREATE TABLE IF NOT EXISTS usuarios (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci;
 
 -- Insertar usuarios por defecto (contraseña: password)
-INSERT INTO usuarios (username, password, nombre, email, rol) VALUES
-('luis', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Luis', 'luis@vizengo.com', 'vendedor'),
-('karina', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Karina', 'karina@vizengo.com', 'vendedor'),
-('carolina', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Carolina', 'carolina@vizengo.com', 'disenador'),
-('erick', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Erick', 'erick@vizengo.com', 'disenador'),
-('admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Administrador', 'admin@vizengo.com', 'administrador');
+INSERT INTO usuarios (username, password, nombre, celular, email, rol) VALUES
+('jhon', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Jhon','991122597' ,'jhon@vizengo.com', 'vendedor'),
+('karina', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Karina','99898998', 'karina@vizengo.com', 'vendedor'),
+('carolina', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Carolina','999999' ,'carolina@vizengo.com', 'disenador'),
+('erick', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Erick','912366', 'erick@vizengo.com', 'disenador'),
+('admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Administrador','99999999', 'admin@vizengo.com', 'administrador');
 
 -- ============================================
 -- TABLA: clientes
@@ -79,6 +79,7 @@ CREATE TABLE IF NOT EXISTS pedidos (
     -- Fechas
     fecha_pedido TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     fecha_entrega DATE,
+	hora_entrega time,
     fecha_limite DATE,
     fecha_completado TIMESTAMP NULL,
     
@@ -388,7 +389,10 @@ CREATE TABLE IF NOT EXISTS historial_pedidos (
 
 -- Insertar clientes de ejemplo
 INSERT INTO clientes (nombre, celular, email, direccion) VALUES
-('LUISA MARMOLEJO', '999-888-777', 'luisa@email.com', 'Av. Principal 123'),
+('Yanina', '', '', 'Av. Principal 123'),
+('Nitza', '', '', 'Av. Principal 123'),
+('Lizeth', '', '', 'Av. Principal 123'),
+
 ('JOSE CARDENAS', '999-123-456', 'jose@email.com', 'Calle Los Olivos 456'),
 ('ALBERTO YAPIAS', '999-555-333', 'alberto@email.com', 'Jr. Las Flores 789'),
 ('TERESA SALAS', '999-444-222', 'teresa@email.com', 'Av. San Martin 321');
