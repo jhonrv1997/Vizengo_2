@@ -52,8 +52,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } else {
                     // Crear usuario (contraseña = DNI)
                     $hashedPassword = password_hash($dni, PASSWORD_DEFAULT);
-                    $stmt = $db->prepare("INSERT INTO usuarios (username, password, nombre, email, rol) VALUES (?, ?, ?, ?, ?)");
-                    $stmt->execute([$dni, $hashedPassword, $nombres, $email, $rol]);
+                    $stmt = $db->prepare("INSERT INTO usuarios (username, password, nombre, celular, email, rol) VALUES (?, ?, ?, ?, ?, ?)");
+                    $stmt->execute([$dni, $hashedPassword, $nombres, $celular, $email, $rol]);
                     $success = 'Usuario creado exitosamente. Contraseña inicial: ' . $dni;
                 }
             }
@@ -70,11 +70,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($id > 0 && !empty($nombres)) {
                 if (!empty($nueva_password)) {
                     $hashedPassword = password_hash($nueva_password, PASSWORD_DEFAULT);
-                    $stmt = $db->prepare("UPDATE usuarios SET nombre = ?, email = ?, rol = ?, password = ? WHERE id = ?");
-                    $stmt->execute([$nombres, $email, $rol, $hashedPassword, $id]);
+                    $stmt = $db->prepare("UPDATE usuarios SET nombre = ?, celular = ?, email = ?, rol = ?, password = ? WHERE id = ?");
+                    $stmt->execute([$nombres, $celular, $email, $rol, $hashedPassword, $id]);
                 } else {
-                    $stmt = $db->prepare("UPDATE usuarios SET nombre = ?, email = ?, rol = ? WHERE id = ?");
-                    $stmt->execute([$nombres, $email, $rol, $id]);
+                    $stmt = $db->prepare("UPDATE usuarios SET nombre = ?, celular = ?, email = ?, rol = ? WHERE id = ?");
+                    $stmt->execute([$nombres, $celular, $email, $rol, $id]);
                 }
                 $success = 'Usuario actualizado exitosamente';
             }
@@ -298,6 +298,7 @@ $stats = $stmt->fetch();
                     <tr>
                         <th>Usuario</th>
                         <th>DNI</th>
+                        <th>Celular</th>
                         <th>Email</th>
                         <th>Rol</th>
                         <th>Estado</th>
@@ -325,6 +326,7 @@ $stats = $stmt->fetch();
                             </div>
                         </td>
                         <td><code style="background:var(--bg);padding:4px 8px;border-radius:4px;font-size:0.85rem;"><?php echo htmlspecialchars($u['username']); ?></code></td>
+                        <td><?php echo htmlspecialchars($u['celular'] ?? '<span style="color:var(--muted);font-style:italic;">Sin celular</span>'); ?></td>
                         <td><?php echo htmlspecialchars($u['email'] ?? '<span style="color:var(--muted);font-style:italic;">Sin email</span>'); ?></td>
                         <td>
                             <span class="role-badge <?php echo $u['rol']; ?>">
@@ -490,6 +492,7 @@ function editarUsuario(userData) {
     document.getElementById('inputDni').value = userData.username;
     document.getElementById('inputDni').disabled = true;
     document.getElementById('inputNombres').value = userData.nombre;
+    document.getElementById('inputCelular').value = userData.celular || '';
     document.getElementById('inputEmail').value = userData.email || '';
     
     // Seleccionar rol
