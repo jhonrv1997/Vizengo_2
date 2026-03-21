@@ -120,7 +120,8 @@ CREATE TABLE IF NOT EXISTS kits (
     -- Cantidad y precio
     cantidad INT DEFAULT 1,
     precio_unitario DECIMAL(10,2) DEFAULT 0.00,
-    
+    subtotal DECIMAL(10,2) DEFAULT 0.00,
+	
     FOREIGN KEY (pedido_id) REFERENCES pedidos(id) ON DELETE CASCADE,
     INDEX idx_pedido (pedido_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci;
