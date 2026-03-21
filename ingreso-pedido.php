@@ -1241,6 +1241,15 @@ document.getElementById('formPedido').addEventListener('submit', function(e) {
         return false;
     }
     
+	// Validar que el adelanto sea mayor a 0
+const adelantoInput = document.getElementById('adelantoInputDisplay');
+const adelantoValue = parseFloat(adelantoInput.value) || 0;
+if (adelantoValue <= 0 || adelantoInput.value.trim() === '') {
+    e.preventDefault();
+    alert('Por favor, ingresa un monto de adelanto mayor a 0.');
+    adelantoInput.focus();
+    return false;
+}
     // Actualizar el input file con los archivos acumulados antes de enviar
     updateFileInput();
     
