@@ -399,13 +399,13 @@ $fechaHoy = str_replace(array_keys($meses), array_values($meses), $fechaHoy);
                                     <input type="text" name="direccion_envio" id="direccionEnvio" class="field-ctrl mt-2" placeholder="Especifique agencia o dirección..." style="display:none;">
                                 </div>
                             </div>
-							<div class="col-md-4">
-								<div class="field-group">
-									<label class="field-lbl">Vendedor</label>
-									<input type="hidden" name="vendedor_asignado" value="<?php echo htmlspecialchars($user['nombre']); ?>">
-									<input type="text" class="field-ctrl" value="<?php echo htmlspecialchars($user['nombre']); ?>" readonly style="background:#f8f9fa;cursor:not-allowed;">
-								</div>
-							</div>
+                                                        <div class="col-md-4">
+                                                                <div class="field-group">
+                                                                        <label class="field-lbl">Vendedor</label>
+                                                                        <input type="hidden" name="vendedor_asignado" value="<?php echo htmlspecialchars($user['nombre']); ?>">
+                                                                        <input type="text" class="field-ctrl" value="<?php echo htmlspecialchars($user['nombre']); ?>" readonly style="background:#f8f9fa;cursor:not-allowed;">
+                                                                </div>
+                                                        </div>
                             <div class="col-md-8">
                                 <div class="field-group">
                                     <label class="field-lbl">Cliente</label>
@@ -750,9 +750,9 @@ $fechaHoy = str_replace(array_keys($meses), array_values($meses), $fechaHoy);
                                 // Determinar color del badge según cantidad
                                 if ($cantidad == 0) {
                                     $badgeClass = 'cb-gris';
-                                } elseif ($cantidad <= 3) {
+                                } elseif ($cantidad <= 12) {
                                     $badgeClass = 'cb-verde';
-                                } elseif ($cantidad <= 7) {
+                                } elseif ($cantidad <= 15) {
                                     $badgeClass = 'cb-amarillo';
                                 } else {
                                     $badgeClass = 'cb-rojo';
@@ -833,6 +833,7 @@ let proformaItems = [];
 let kitCounter = 0;
 let adicionalCounter = 0;
 let merchCounter = 0;
+let selectedFiles = []; // Array para almacenar las imágenes seleccionadas (máx. 4)
 
 // Función para seleccionar día en el calendario de disponibilidad
 function selDia(el) {
@@ -1131,34 +1132,98 @@ function updateKitsHidden() {
     });
 }
 
-// Manejar selección de archivos
+// Manejar selección de archivos - Acumula imágenes hasta un máximo de 4
 function handleFileSelect(event) {
-    const files = event.target.files;
+    const newFiles = Array.from(event.target.files);
+    const previewGrid = document.getElementById('previewGrid');
+    const uploadArea = document.getElementById('uploadArea');
+    
+    // Calcular cuántos archivos más se pueden agregar
+    const remainingSlots = 4 - selectedFiles.length;
+    
+    if (remainingSlots <= 0) {
+        alert('Ya tienes el máximo de 4 imágenes seleccionadas. Elimina alguna para agregar nuevas.');
+        event.target.value = ''; // Limpiar el input
+        return;
+    }
+    
+    // Agregar solo los archivos que caben
+    const filesToAdd = newFiles.slice(0, remainingSlots);
+    
+    if (filesToAdd.length < newFiles.length) {
+        alert(`Solo se agregaron ${filesToAdd.length} imagen(es) para no exceder el límite de 4.`);
+    }
+    
+    // Agregar los nuevos archivos al array acumulado
+    selectedFiles = [...selectedFiles, ...filesToAdd];
+    
+    // Actualizar el preview
+    updatePreview();
+    
+    // Limpiar el input para permitir seleccionar más archivos después
+    event.target.value = '';
+}
+
+// Actualizar la vista previa de imágenes
+function updatePreview() {
     const previewGrid = document.getElementById('previewGrid');
     const uploadArea = document.getElementById('uploadArea');
     
     previewGrid.innerHTML = '';
     
-    if (files.length > 0) {
+    if (selectedFiles.length > 0) {
         uploadArea.classList.add('has-files');
         previewGrid.style.display = 'grid';
         
-        Array.from(files).slice(0, 4).forEach((file, index) => {
+        selectedFiles.forEach((file, index) => {
             const reader = new FileReader();
             reader.onload = function(e) {
                 const div = document.createElement('div');
                 div.className = 'preview-item';
                 div.innerHTML = `
                     <img src="${e.target.result}" alt="Preview ${index + 1}">
+                    <button type="button" class="preview-remove" onclick="removeFile(${index})" title="Eliminar imagen">
+                        <i class="fas fa-times"></i>
+                    </button>
                 `;
                 previewGrid.appendChild(div);
             };
             reader.readAsDataURL(file);
         });
+        
+        // Actualizar texto del área de carga
+        const uploadText = uploadArea.querySelector('div[style*="font-size"]');
+        if (uploadText) {
+            uploadText.textContent = `${selectedFiles.length}/4 imágenes seleccionadas · Haz clic para agregar más`;
+        }
     } else {
         uploadArea.classList.remove('has-files');
         previewGrid.style.display = 'none';
+        
+        // Restaurar texto original
+        const uploadText = uploadArea.querySelector('div[style*="font-size"]');
+        if (uploadText) {
+            uploadText.textContent = 'Arrastra o haz clic · Máx. 4 fotos';
+        }
     }
+}
+
+// Eliminar una imagen individual del array
+function removeFile(index) {
+    selectedFiles.splice(index, 1);
+    updatePreview();
+}
+
+// Actualizar el input file con los archivos acumulados antes de enviar
+function updateFileInput() {
+    const logoInput = document.getElementById('logoInput');
+    const dataTransfer = new DataTransfer();
+    
+    selectedFiles.forEach(file => {
+        dataTransfer.items.add(file);
+    });
+    
+    logoInput.files = dataTransfer.files;
 }
 
 // Validar formulario antes de enviar
@@ -1175,6 +1240,9 @@ document.getElementById('formPedido').addEventListener('submit', function(e) {
         alert('Por favor, ingresa el nombre del cliente.');
         return false;
     }
+    
+    // Actualizar el input file con los archivos acumulados antes de enviar
+    updateFileInput();
     
     return true;
 });
