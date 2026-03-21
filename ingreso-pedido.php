@@ -216,8 +216,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $rutaDestino = $uploadDir . $nombreArchivo;
                     
                     if (move_uploaded_file($tmpName, $rutaDestino)) {
-                        $stmt = $db->prepare("INSERT INTO referencias_pedido (pedido_id, imagen_path) VALUES (?, ?)");
-                        $stmt->execute([$pedidoId, 'uploads/referencias/' . $nombreArchivo]);
+					 $stmt = $db->prepare("INSERT INTO disenos_iniciales (pedido_id, imagen_path, observaciones) VALUES (?, ?, ?)");
+					 $stmt->execute([$pedidoId, 'uploads/referencias/' . $nombreArchivo, '']);
                     }
                 }
             }
