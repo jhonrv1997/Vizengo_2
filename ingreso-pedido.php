@@ -35,6 +35,40 @@ $vendedores = $stmt->fetchAll();
 $stmt = $db->query("SELECT DISTINCT nombre FROM clientes ORDER BY nombre ASC LIMIT 50");
 $clientesFrecuentes = $stmt->fetchAll();
 
+// Obtener pedidos de la semana actual para disponibilidad
+$pedidosSemana = [];
+try {
+    // Calcular el lunes de la semana actual
+    $hoy = new DateTime();
+    $diaSemana = $hoy->format('N'); // 1=Lunes, 7=Domingo
+    $lunes = clone $hoy;
+    $lunes->modify('-' . ($diaSemana - 1) . ' days');
+    $domingo = clone $lunes;
+    $domingo->modify('+6 days');
+    
+    $lunesStr = $lunes->format('Y-m-d');
+    $domingoStr = $domingo->format('Y-m-d');
+    
+    // Consultar pedidos agrupados por fecha de entrega en la semana
+    $stmt = $db->prepare("
+        SELECT fecha_entrega, COUNT(*) as cantidad 
+        FROM pedidos 
+        WHERE fecha_entrega BETWEEN ? AND ?
+        AND estado_general NOT IN ('cancelado', 'entregado')
+        GROUP BY fecha_entrega
+    ");
+    $stmt->execute([$lunesStr, $domingoStr]);
+    $resultados = $stmt->fetchAll();
+    
+    // Crear array con fechas como keys
+    foreach ($resultados as $r) {
+        $pedidosSemana[$r['fecha_entrega']] = $r['cantidad'];
+    }
+} catch (Exception $e) {
+    // Si hay error, continuar con array vacío
+    $pedidosSemana = [];
+}
+
 // Procesar formulario
 $mensaje = '';
 $tipoMensaje = '';
@@ -702,6 +736,74 @@ $fechaHoy = str_replace(array_keys($meses), array_values($meses), $fechaHoy);
 
             <!-- COLUMNA DERECHA -->
             <div class="col-lg-4">
+                <!-- Disponibilidad Semanal -->
+                <div class="card-v" style="margin-bottom:16px;">
+                    <div class="card-v-header">
+                        <h5 class="card-v-title"><i class="fas fa-calendar-week" style="margin-right:8px;"></i>Disponibilidad Semanal</h5>
+                    </div>
+                    <div class="card-v-body">
+                        <p style="font-size:.8rem;color:var(--muted);margin-bottom:14px;"><i class="fas fa-info-circle" style="margin-right:4px;"></i>Pedidos ya registrados esta semana:</p>
+                        <div class="cal-grid">
+                            <?php
+                            // Array de días en español
+                            $diasCortos = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+                            
+                            // Calcular el lunes de la semana actual
+                            $hoyCal = new DateTime();
+                            $diaSemanaCal = $hoyCal->format('N');
+                            $lunesCal = clone $hoyCal;
+                            $lunesCal->modify('-' . ($diaSemanaCal - 1) . ' days');
+                            
+                            for ($i = 0; $i < 7; $i++) {
+                                $fecha = clone $lunesCal;
+                                $fecha->modify("+{$i} days");
+                                $fechaStr = $fecha->format('Y-m-d');
+                                $diaNum = $fecha->format('d');
+                                $cantidad = isset($pedidosSemana[$fechaStr]) ? $pedidosSemana[$fechaStr] : 0;
+                                
+                                // Determinar color del badge según cantidad
+                                if ($cantidad == 0) {
+                                    $badgeClass = 'cb-gris';
+                                } elseif ($cantidad <= 12) {
+                                    $badgeClass = 'cb-verde';
+                                } elseif ($cantidad <= 15) {
+                                    $badgeClass = 'cb-amarillo';
+                                } else {
+                                    $badgeClass = 'cb-rojo';
+                                }
+                                
+                                // Verificar si es hoy
+                                $esHoy = ($fechaStr === date('Y-m-d')) ? ' selected' : '';
+                                
+                                echo '<div class="cal-day' . $esHoy . '" onclick="selDia(this)" data-fecha="' . $fechaStr . '">';
+                                echo '<div class="cal-dn">' . $diasCortos[$i] . '</div>';
+                                echo '<div class="cal-num">' . $diaNum . '</div>';
+                                echo '<span class="cal-badge ' . $badgeClass . '">' . $cantidad . '</span>';
+                                echo '</div>';
+                            }
+                            ?>
+                        </div>
+                        <div style="height:1px;background:var(--border);margin:16px 0;"></div>
+                        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                            <div style="display:flex;align-items:center;gap:12px;">
+                                <span style="font-size:.7rem;color:var(--muted);display:flex;align-items:center;gap:4px;">
+                                    <span class="cal-badge cb-verde" style="font-size:.6rem;">●</span> Disponible
+                                </span>
+                                <span style="font-size:.7rem;color:var(--muted);display:flex;align-items:center;gap:4px;">
+                                    <span class="cal-badge cb-amarillo" style="font-size:.6rem;">●</span> Moderado
+                                </span>
+                                <span style="font-size:.7rem;color:var(--muted);display:flex;align-items:center;gap:4px;">
+                                    <span class="cal-badge cb-rojo" style="font-size:.6rem;">●</span> Ocupado
+                                </span>
+                            </div>
+                        </div>
+                        <p style="font-size:.75rem;color:var(--muted);margin-top:12px;font-style:italic;">
+                            <i class="fas fa-lightbulb" style="color:var(--warning);margin-right:4px;"></i>
+                            Haz clic en un día para sugerirlo como fecha de entrega
+                        </p>
+                    </div>
+                </div>
+                
                 <!-- Totales -->
                 <div class="card-v" style="position:sticky;top:20px;">
                     <div class="card-v-header" style="background:var(--sidebar-bg);">
@@ -745,6 +847,23 @@ let proformaItems = [];
 let kitCounter = 0;
 let adicionalCounter = 0;
 let merchCounter = 0;
+
+// Función para seleccionar día en el calendario de disponibilidad
+function selDia(el) {
+    // Quitar selección previa
+    document.querySelectorAll('.cal-day').forEach(d => d.classList.remove('selected'));
+    // Agregar selección al elemento clickeado
+    el.classList.add('selected');
+    
+    // Obtener la fecha del día seleccionado y actualizar el campo de fecha de entrega
+    const fechaSeleccionada = el.getAttribute('data-fecha');
+    if (fechaSeleccionada) {
+        const campoFecha = document.querySelector('input[name="fecha_entrega"]');
+        if (campoFecha) {
+            campoFecha.value = fechaSeleccionada;
+        }
+    }
+}
 
 // Toggle para campo de dirección de envío
 function toggleEnvioInput(select) {
