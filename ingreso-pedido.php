@@ -137,6 +137,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
         
+        // Insertar adicionales de talla
+        if (!empty($_POST['adicionales']) && is_array($_POST['adicionales'])) {
+            $stmtAdicional = $db->prepare("INSERT INTO adicionales_talla (
+                pedido_id, talla, cantidad, precio_unitario
+            ) VALUES (?, ?, ?, ?)");
+            
+            foreach ($_POST['adicionales'] as $adicional) {
+                $stmtAdicional->execute([
+                    $pedidoId,
+                    sanitize($adicional['talla'] ?? ''),
+                    intval($adicional['cantidad'] ?? 1),
+                    floatval($adicional['precio_unitario'] ?? 0)
+                ]);
+            }
+        }
+        
+        // Insertar merchandising
+        if (!empty($_POST['merchandising']) && is_array($_POST['merchandising'])) {
+            $stmtMerch = $db->prepare("INSERT INTO merchandising (
+                pedido_id, articulo, cantidad, precio_unitario, es_regalo, especificaciones
+            ) VALUES (?, ?, ?, ?, ?, ?)");
+            
+            foreach ($_POST['merchandising'] as $merch) {
+                $stmtMerch->execute([
+                    $pedidoId,
+                    sanitize($merch['articulo'] ?? ''),
+                    intval($merch['cantidad'] ?? 1),
+                    floatval($merch['precio_unitario'] ?? 0),
+                    intval($merch['es_regalo'] ?? 0),
+                    sanitize($merch['especificaciones'] ?? '')
+                ]);
+            }
+        }
+        
         // Procesar imágenes si se subieron
         if (!empty($_FILES['logos'])) {
             $uploadDir = UPLOAD_PATH . 'referencias/';
@@ -530,6 +564,86 @@ $fechaHoy = str_replace(array_keys($meses), array_values($meses), $fechaHoy);
                             </div>
                         </div>
 
+                        <!-- Adicional talla especial -->
+                        <div class="kit-box" style="border-color:rgba(43,79,255,.2);">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                                <span style="font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:.9rem;color:var(--primary);text-transform:uppercase;"><i class="fas fa-tags" style="margin-right:6px;"></i>Adicional Talla Especial</span>
+                            </div>
+                            <div class="row g-2">
+                                <div class="col-md-4">
+                                    <label class="field-lbl">Talla</label>
+                                    <select class="field-ctrl" id="xlTalla">
+                                        <option disabled selected>Seleccionar...</option>
+                                        <option>XL</option>
+                                        <option>XXL</option>
+                                        <option>XXXL</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="field-lbl">Cantidad</label>
+                                    <input type="number" id="xlCantidad" class="field-ctrl text-center" value="1" min="1">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="field-lbl">Precio Unit.</label>
+                                    <div style="display:flex;align-items:center;gap:4px;">
+                                        <span style="font-size:.85rem;color:var(--muted);font-weight:600;">S/</span>
+                                        <input type="number" id="xlPrecio" class="field-ctrl text-end" value="0.00" step="0.01">
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="margin-top:12px;">
+                                <button type="button" class="btn-primary-action btn-sm" onclick="agregarAdicional()"><i class="fas fa-plus"></i> Agregar a Proforma</button>
+                            </div>
+                        </div>
+
+                        <!-- Banderolas y Merchandising -->
+                        <div class="kit-box" style="border-color:rgba(100,116,139,.2);">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                                <span style="font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:.9rem;color:var(--muted);text-transform:uppercase;"><i class="fas fa-flag" style="margin-right:6px;"></i>Banderolas / Merchandising</span>
+                            </div>
+                            <div class="row g-2">
+                                <div class="col-8">
+                                    <label class="field-lbl">Artículo</label>
+                                    <select class="field-ctrl" id="merchArticulo">
+                                        <option value="NINGUNO">NINGUNO</option>
+                                        <option>BANDEROLA</option>
+                                        <option>SOMBRERO</option>
+                                        <option>GORRO</option>
+                                        <option>BANDERA</option>
+                                        <option>PAÑUELO</option>
+                                        <option>IMPRESIÓN PAPEL</option>
+                                        <option>ESTAMPADO</option>
+                                        <option>BORDADO</option>
+                                        <option>SUBLIMADO</option>
+                                        <option>OTROS</option>
+                                    </select>
+                                </div>
+                                <div class="col-4" style="display:flex;align-items:flex-end;padding-bottom:2px;">
+                                    <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;font-weight:600;color:var(--success);cursor:pointer;">
+                                        <input type="checkbox" id="regaloCheck"> ¿Regalo?
+                                    </label>
+                                </div>
+                                <div class="col-4">
+                                    <label class="field-lbl">Cant.</label>
+                                    <input type="number" id="merchCantidad" class="field-ctrl text-center" value="1" min="1">
+                                </div>
+                                <div class="col-8">
+                                    <label class="field-lbl">Precio Unit.</label>
+                                    <div style="display:flex;align-items:center;gap:4px;">
+                                        <span style="font-size:.85rem;color:var(--muted);font-weight:600;">S/</span>
+                                        <input type="number" id="merchPrecio" class="field-ctrl text-end" value="0.00" step="0.01">
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="field-lbl">Especificaciones</label>
+                                    <input type="text" id="merchEspecificaciones" class="field-ctrl" placeholder="Ej: 1.5m x 3m, fondo azul...">
+                                </div>
+                            </div>
+                            <div style="margin-top:12px;">
+                                <button type="button" class="btn-primary-action btn-sm" onclick="agregarMerch()"><i class="fas fa-plus"></i> Agregar a Proforma</button>
+                            </div>
+                        </div>
+
                         <!-- Logo/Referencia -->
                         <div class="kit-box">
                             <label class="field-lbl" style="margin-bottom:10px;"><i class="fas fa-image" style="color:var(--primary);margin-right:6px;"></i>Logo / Referencia (máx. 4 fotos)</label>
@@ -619,6 +733,8 @@ $fechaHoy = str_replace(array_keys($meses), array_values($meses), $fechaHoy);
 // Variables globales
 let proformaItems = [];
 let kitCounter = 0;
+let adicionalCounter = 0;
+let merchCounter = 0;
 
 // Toggle para campo de dirección de envío
 function toggleEnvioInput(select) {
@@ -708,6 +824,89 @@ function agregarKitPrincipal() {
     actualizarTotales();
 }
 
+// Agregar adicional de talla especial a proforma
+function agregarAdicional() {
+    const tallaSelect = document.getElementById('xlTalla');
+    const talla = tallaSelect.value;
+    
+    if (!talla || talla === 'Seleccionar...') {
+        alert('Por favor, selecciona una talla.');
+        return;
+    }
+    
+    const cantidad = parseInt(document.getElementById('xlCantidad').value) || 1;
+    const precio = parseFloat(document.getElementById('xlPrecio').value) || 0;
+    
+    const item = {
+        id: ++kitCounter,
+        tipo: 'adicional_talla',
+        adicionalId: ++adicionalCounter,
+        cantidad: cantidad,
+        descripcion: `Adicional Talla ${talla}`,
+        talla: talla,
+        precioUnitario: precio,
+        subtotal: cantidad * precio,
+        adicional: {
+            talla: talla,
+            cantidad: cantidad,
+            precio_unitario: precio
+        }
+    };
+    
+    proformaItems.push(item);
+    renderProforma();
+    actualizarTotales();
+    
+    // Resetear campos
+    tallaSelect.selectedIndex = 0;
+    document.getElementById('xlCantidad').value = 1;
+    document.getElementById('xlPrecio').value = 0;
+}
+
+// Agregar merchandising a proforma
+function agregarMerch() {
+    const articulo = document.getElementById('merchArticulo').value;
+    
+    if (!articulo || articulo === 'NINGUNO') {
+        alert('Por favor, selecciona un artículo.');
+        return;
+    }
+    
+    const cantidad = parseInt(document.getElementById('merchCantidad').value) || 1;
+    const precio = parseFloat(document.getElementById('merchPrecio').value) || 0;
+    const esRegalo = document.getElementById('regaloCheck').checked;
+    const especificaciones = document.getElementById('merchEspecificaciones').value || '';
+    
+    const item = {
+        id: ++kitCounter,
+        tipo: 'merchandising',
+        merchId: ++merchCounter,
+        cantidad: cantidad,
+        descripcion: `${articulo}${esRegalo ? ' (REGALO)' : ''}`,
+        talla: '-',
+        precioUnitario: esRegalo ? 0 : precio,
+        subtotal: esRegalo ? 0 : (cantidad * precio),
+        merch: {
+            articulo: articulo,
+            cantidad: cantidad,
+            precio_unitario: precio,
+            es_regalo: esRegalo ? 1 : 0,
+            especificaciones: especificaciones
+        }
+    };
+    
+    proformaItems.push(item);
+    renderProforma();
+    actualizarTotales();
+    
+    // Resetear campos
+    document.getElementById('merchArticulo').value = 'NINGUNO';
+    document.getElementById('merchCantidad').value = 1;
+    document.getElementById('merchPrecio').value = 0;
+    document.getElementById('regaloCheck').checked = false;
+    document.getElementById('merchEspecificaciones').value = '';
+}
+
 // Renderizar proforma
 function renderProforma() {
     const tbody = document.getElementById('listaProforma');
@@ -771,19 +970,49 @@ function calcSaldo() {
     document.getElementById('adelantoInput').value = adelanto;
 }
 
-// Actualizar campos hidden de kits
+// Actualizar campos hidden de kits, adicionales y merchandising
 function updateKitsHidden() {
     // Remover campos anteriores
     document.querySelectorAll('input[name^="kits["]').forEach(el => el.remove());
+    document.querySelectorAll('input[name^="adicionales["]').forEach(el => el.remove());
+    document.querySelectorAll('input[name^="merchandising["]').forEach(el => el.remove());
     
-    proformaItems.forEach((item, index) => {
-        Object.keys(item.kit).forEach(key => {
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = `kits[${index}][${key}]`;
-            input.value = item.kit[key];
-            document.getElementById('formPedido').appendChild(input);
-        });
+    let kitIndex = 0;
+    let adicionalIndex = 0;
+    let merchIndex = 0;
+    
+    proformaItems.forEach((item) => {
+        if (item.tipo === 'kit' || !item.tipo) {
+            // Es un kit normal
+            Object.keys(item.kit).forEach(key => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = `kits[${kitIndex}][${key}]`;
+                input.value = item.kit[key];
+                document.getElementById('formPedido').appendChild(input);
+            });
+            kitIndex++;
+        } else if (item.tipo === 'adicional_talla') {
+            // Es un adicional de talla
+            Object.keys(item.adicional).forEach(key => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = `adicionales[${adicionalIndex}][${key}]`;
+                input.value = item.adicional[key];
+                document.getElementById('formPedido').appendChild(input);
+            });
+            adicionalIndex++;
+        } else if (item.tipo === 'merchandising') {
+            // Es merchandising
+            Object.keys(item.merch).forEach(key => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = `merchandising[${merchIndex}][${key}]`;
+                input.value = item.merch[key];
+                document.getElementById('formPedido').appendChild(input);
+            });
+            merchIndex++;
+        }
     });
 }
 
