@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
     username VARCHAR(50) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
     nombre VARCHAR(100) NOT NULL,
+	celular VARCHAR(20),
     email VARCHAR(100),
     rol ENUM('vendedor', 'disenador', 'administrador') NOT NULL DEFAULT 'vendedor',
     activo TINYINT(1) DEFAULT 1,
