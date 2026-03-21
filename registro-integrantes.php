@@ -328,7 +328,7 @@ $tallas = ['2','4','6','8','10','12','14','16','XS','S','M','L','XL','XXL'];
                     <?php foreach ($integrantes as $i): ?>
                     <div class="integrante-row">
                         <input type="text" value="<?php echo htmlspecialchars($i['nombre']); ?>" placeholder="Nombre">
-                        <select onchange="actualizarResumen()">
+                        <select class="talla-select" onchange="actualizarResumen()">
                             <option value="">—</option>
                             <?php foreach ($tallas as $t): ?>
                             <option value="<?php echo $t; ?>" <?php echo $i['talla'] === $t ? 'selected' : ''; ?>><?php echo $t; ?></option>
@@ -389,6 +389,28 @@ $tallas = ['2','4','6','8','10','12','14','16','XS','S','M','L','XL','XXL'];
                             <div style="font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:800;color:#db2777;line-height:1;" id="totalDamas">0</div>
                         </div>
                     </div>
+                    
+                    <!-- Resumen de Tallas por Sexo -->
+                    <div style="margin-bottom:16px;">
+                        <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:10px;">Tallas (Auto)</div>
+                        
+                        <!-- Tallas Varones -->
+                        <div style="margin-bottom:12px;">
+                            <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#0891b2;margin-bottom:6px;"><i class="fas fa-mars" style="margin-right:4px;"></i>Varones</div>
+                            <div id="resumenTallasVarones" style="display:flex;flex-wrap:wrap;">
+                                <div style="font-size:.75rem;color:var(--muted);font-style:italic;padding:4px 0;">Sin tallas...</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Tallas Damas -->
+                        <div>
+                            <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#db2777;margin-bottom:6px;"><i class="fas fa-venus" style="margin-right:4px;"></i>Damas</div>
+                            <div id="resumenTallasDamas" style="display:flex;flex-wrap:wrap;">
+                                <div style="font-size:.75rem;color:var(--muted);font-style:italic;padding:4px 0;">Sin tallas...</div>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div style="display:flex;flex-direction:column;gap:10px;">
                         <button type="submit" class="btn-v btn-success-v" style="width:100%;justify-content:center;">
                             <i class="fas fa-check-double"></i> Confirmar y Guardar
@@ -420,6 +442,7 @@ $tallas = ['2','4','6','8','10','12','14','16','XS','S','M','L','XL','XXL'];
 <script>
 const tallas = <?php echo json_encode($tallas); ?>;
 const cantidadMaximaKits = <?php echo isset($cantidadMaximaKits) ? $cantidadMaximaKits : 0; ?>;
+const TALLAS = tallas; // Alias para el resumen de tallas
 
 function crearFila() {
     const div = document.createElement('div');
@@ -470,20 +493,69 @@ function eliminarFila(btn) {
 function actualizarResumen() {
     const rows = document.querySelectorAll('.integrante-row');
     let total = 0, varones = 0, damas = 0;
+    const conteoVarones = {};
+    const conteoDamas = {};
     
     rows.forEach(row => {
         const nombreInput = row.querySelector('input:first-child');
         if (nombreInput && nombreInput.value.trim()) {
             total++;
             const sexo = row.querySelector('.sexo-select')?.value || '';
-            if (sexo === 'Varon') varones++;
-            else if (sexo === 'Dama') damas++;
+            const talla = row.querySelector('.talla-select')?.value || '';
+            
+            if (sexo === 'Varon') {
+                varones++;
+                if (talla) {
+                    conteoVarones[talla] = (conteoVarones[talla] || 0) + 1;
+                }
+            } else if (sexo === 'Dama') {
+                damas++;
+                if (talla) {
+                    conteoDamas[talla] = (conteoDamas[talla] || 0) + 1;
+                }
+            }
         }
     });
     
     document.getElementById('totalIntegrantes').textContent = total;
     document.getElementById('totalVarones').textContent = varones;
     document.getElementById('totalDamas').textContent = damas;
+    
+    // Actualizar resumen de tallas Varones
+    const contVarones = document.getElementById('resumenTallasVarones');
+    if (varones === 0 || Object.keys(conteoVarones).length === 0) {
+        contVarones.innerHTML = '<div style="font-size:.75rem;color:var(--muted);font-style:italic;padding:4px 0;">Sin tallas...</div>';
+    } else {
+        contVarones.innerHTML = '';
+        TALLAS.forEach(t => {
+            if (conteoVarones[t]) {
+                const div = document.createElement('div');
+                div.className = 'size-badge active';
+                div.style.borderColor = '#0891b2';
+                div.style.background = 'rgba(6,182,212,.08)';
+                div.innerHTML = `<span class="size-name">${t}</span><span class="size-count" style="color:#0891b2;">${conteoVarones[t]}</span>`;
+                contVarones.appendChild(div);
+            }
+        });
+    }
+    
+    // Actualizar resumen de tallas Damas
+    const contDamas = document.getElementById('resumenTallasDamas');
+    if (damas === 0 || Object.keys(conteoDamas).length === 0) {
+        contDamas.innerHTML = '<div style="font-size:.75rem;color:var(--muted);font-style:italic;padding:4px 0;">Sin tallas...</div>';
+    } else {
+        contDamas.innerHTML = '';
+        TALLAS.forEach(t => {
+            if (conteoDamas[t]) {
+                const div = document.createElement('div');
+                div.className = 'size-badge active';
+                div.style.borderColor = '#db2777';
+                div.style.background = 'rgba(236,72,153,.08)';
+                div.innerHTML = `<span class="size-name">${t}</span><span class="size-count" style="color:#db2777;">${conteoDamas[t]}</span>`;
+                contDamas.appendChild(div);
+            }
+        });
+    }
     
     // Actualizar barra de progreso si existe límite de kits
     if (cantidadMaximaKits > 0) {
