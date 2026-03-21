@@ -50,7 +50,7 @@ try {
 
 function listarUsuarios() {
     $db = getDB();
-    $stmt = $db->query("SELECT id, username, nombre, email, rol, activo, fecha_creacion, ultimo_acceso 
+    $stmt = $db->query("SELECT id, username, nombre, celular, email, rol, activo, fecha_creacion, ultimo_acceso 
                         FROM usuarios ORDER BY nombre ASC");
     $usuarios = $stmt->fetchAll();
     
@@ -69,7 +69,7 @@ function obtenerUsuario() {
     }
     
     $db = getDB();
-    $stmt = $db->prepare("SELECT id, username, nombre, email, rol, activo, fecha_creacion, ultimo_acceso 
+    $stmt = $db->prepare("SELECT id, username, nombre, celular, email, rol, activo, fecha_creacion, ultimo_acceso 
                           FROM usuarios WHERE id = ?");
     $stmt->execute([$id]);
     $usuario = $stmt->fetch();
@@ -87,6 +87,7 @@ function crearUsuario() {
     $username = sanitize($input['username'] ?? '');
     $password = $input['password'] ?? '';
     $nombre = sanitize($input['nombre'] ?? '');
+    $celular = sanitize($input['celular'] ?? '');
     $email = sanitize($input['email'] ?? '');
     $rol = sanitize($input['rol'] ?? 'vendedor');
     
@@ -111,8 +112,8 @@ function crearUsuario() {
     
     // Crear usuario
     $hashPassword = password_hash($password, PASSWORD_DEFAULT);
-    $stmt = $db->prepare("INSERT INTO usuarios (username, password, nombre, email, rol) VALUES (?, ?, ?, ?, ?)");
-    $stmt->execute([$username, $hashPassword, $nombre, $email, $rol]);
+    $stmt = $db->prepare("INSERT INTO usuarios (username, password, nombre, celular, email, rol) VALUES (?, ?, ?, ?, ?, ?)");
+    $stmt->execute([$username, $hashPassword, $nombre, $celular, $email, $rol]);
     
     successResponse(['id' => $db->lastInsertId()], 'Usuario creado exitosamente');
 }
@@ -126,6 +127,7 @@ function actualizarUsuario() {
     $input = json_decode(file_get_contents('php://input'), true);
     
     $nombre = sanitize($input['nombre'] ?? '');
+    $celular = sanitize($input['celular'] ?? '');
     $email = sanitize($input['email'] ?? '');
     $rol = sanitize($input['rol'] ?? '');
     $activo = intval($input['activo'] ?? 1);
@@ -133,8 +135,8 @@ function actualizarUsuario() {
     
     $db = getDB();
     
-    $sql = "UPDATE usuarios SET nombre = ?, email = ?, rol = ?, activo = ?";
-    $params = [$nombre, $email, $rol, $activo];
+    $sql = "UPDATE usuarios SET nombre = ?, celular = ?, email = ?, rol = ?, activo = ?";
+    $params = [$nombre, $celular, $email, $rol, $activo];
     
     if (!empty($password)) {
         $sql .= ", password = ?";
