@@ -99,9 +99,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Guardar integrantes de la tabla
             $integrantesData = json_decode($integrantesJson, true);
             if (!empty($integrantesData)) {
-                // Validar cantidad de integrantes según kits
+                // VALIDACIÓN 1: Verificar límite de integrantes según kits
                 if ($cantidadMaximaKitsPost > 0 && count($integrantesData) > $cantidadMaximaKitsPost) {
                     throw new Exception("No se pueden registrar más de {$cantidadMaximaKitsPost} integrantes. Cantidad actual: " . count($integrantesData));
+                }
+                
+                // VALIDACIÓN 2-5: Verificar que todos los campos obligatorios estén completos
+                $erroresValidacion = [];
+                $fila = 0;
+                foreach ($integrantesData as $int) {
+                    $fila++;
+                    $numFila = $fila;
+                    
+                    // Validar Nombre
+                    if (empty(trim($int['nombre'] ?? ''))) {
+                        $erroresValidacion[] = "Fila {$numFila}: El campo 'Nombre' es obligatorio.";
+                    }
+                    
+                    // Validar Talla
+                    if (empty(trim($int['talla'] ?? ''))) {
+                        $erroresValidacion[] = "Fila {$numFila}: El campo 'Talla' es obligatorio.";
+                    }
+                    
+                    // Validar Número
+                    if (empty(trim($int['numero'] ?? ''))) {
+                        $erroresValidacion[] = "Fila {$numFila}: El campo 'Número' es obligatorio.";
+                    }
+                    
+                    // Validar Sexo
+                    if (empty(trim($int['sexo'] ?? ''))) {
+                        $erroresValidacion[] = "Fila {$numFila}: El campo 'Sexo' es obligatorio.";
+                    }
+                }
+                
+                // Si hay errores, lanzar excepción con todos los mensajes
+                if (!empty($erroresValidacion)) {
+                    throw new Exception("Errores de validación:\n" . implode("\n", $erroresValidacion));
                 }
                 
                 // Eliminar anteriores
@@ -628,9 +661,35 @@ function seleccionarPedido(id) {
 document.getElementById('formIntegrantes')?.addEventListener('submit', function(e) {
     const rows = document.querySelectorAll('.integrante-row');
     const integrantes = [];
-    rows.forEach(row => {
+    const errores = [];
+    
+    rows.forEach((row, index) => {
         const inputs = row.querySelectorAll('input, select');
-        if (inputs[0].value.trim()) {
+        const numFila = index + 1;
+        const nombre = inputs[0].value.trim();
+        
+        // Solo validar filas que tienen algún dato ingresado
+        if (nombre || inputs[1].value || inputs[2].value || inputs[5].value) {
+            // VALIDACIÓN: Nombre obligatorio
+            if (!nombre) {
+                errores.push(`Fila ${numFila}: El campo 'Nombre' es obligatorio.`);
+            }
+            
+            // VALIDACIÓN: Talla obligatoria
+            if (!inputs[1].value) {
+                errores.push(`Fila ${numFila}: El campo 'Talla' es obligatorio.`);
+            }
+            
+            // VALIDACIÓN: Número obligatorio
+            if (!inputs[2].value.trim()) {
+                errores.push(`Fila ${numFila}: El campo 'Número' es obligatorio.`);
+            }
+            
+            // VALIDACIÓN: Sexo obligatorio
+            if (!inputs[5].value) {
+                errores.push(`Fila ${numFila}: El campo 'Sexo' es obligatorio.`);
+            }
+            
             integrantes.push({
                 nombre: inputs[0].value,
                 talla: inputs[1].value,
@@ -642,10 +701,24 @@ document.getElementById('formIntegrantes')?.addEventListener('submit', function(
         }
     });
     
-    // Validar límite de integrantes según kits
+    // VALIDACIÓN: Verificar que hay al menos un integrante
+    if (integrantes.length === 0) {
+        e.preventDefault();
+        alert('Error: Debe registrar al menos un integrante con todos los campos obligatorios completos.');
+        return false;
+    }
+    
+    // VALIDACIÓN: Límite de integrantes según kits
     if (cantidadMaximaKits > 0 && integrantes.length > cantidadMaximaKits) {
         e.preventDefault();
         alert(`Error: Está intentando registrar ${integrantes.length} integrantes, pero el límite según los kits es de ${cantidadMaximaKits} integrantes.`);
+        return false;
+    }
+    
+    // VALIDACIÓN: Mostrar errores de campos obligatorios
+    if (errores.length > 0) {
+        e.preventDefault();
+        alert('Errores de validación:\n\n' + errores.join('\n'));
         return false;
     }
     
