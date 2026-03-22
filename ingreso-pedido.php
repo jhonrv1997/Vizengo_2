@@ -28,7 +28,7 @@ if (!in_array($user['rol'], ['vendedor', 'administrador'])) {
 $db = getDB();
 
 // Obtener clientes frecuentes
-$stmt = $db->query("SELECT DISTINCT nombre FROM clientes ORDER BY nombre ASC LIMIT 4");
+$stmt = $db->query("SELECT DISTINCT nombre FROM clientes ORDER BY id ASC LIMIT 4");
 $clientesFrecuentes = $stmt->fetchAll();
 
 // Obtener pedidos de los próximos 7 días para disponibilidad
