@@ -28,7 +28,7 @@ if (!in_array($user['rol'], ['vendedor', 'administrador'])) {
 $db = getDB();
 
 // Obtener clientes frecuentes
-$stmt = $db->query("SELECT DISTINCT nombre FROM clientes ORDER BY nombre ASC LIMIT 50");
+$stmt = $db->query("SELECT DISTINCT nombre FROM clientes ORDER BY nombre ASC LIMIT 4");
 $clientesFrecuentes = $stmt->fetchAll();
 
 // Obtener pedidos de los próximos 7 días para disponibilidad
@@ -89,8 +89,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!empty($clienteCelular)) {
                 $stmt = $db->prepare("UPDATE clientes SET celular = ? WHERE id = ?");
                 $stmt->execute([$clienteCelular, $clienteId]);
-            }
-        } else {
+            }	
+        } // Registra clientes nuevos automaticamente
+		 else {
             $stmt = $db->prepare("INSERT INTO clientes (nombre, celular) VALUES (?, ?)");
             $stmt->execute([$clienteNombre, $clienteCelular]);
             $clienteId = $db->lastInsertId();
