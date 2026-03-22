@@ -37,6 +37,7 @@ $stmt = $db->query("SELECT p.id, p.codigo, c.nombre as cliente,
 $pedidosPendientes = $stmt->fetchAll();
 
 // Procesar subida de diseño
+$success = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $pedidoId = intval($_POST['pedido_id'] ?? 0);
     $tipo = sanitize($_POST['tipo'] ?? '');
@@ -78,6 +79,7 @@ $pedidoId = intval($_GET['pedido_id'] ?? 0);
 $pedido = null;
 $integrantes = [];
 $disenosActuales = [];
+$disenosIniciales = [];
 
 if ($pedidoId > 0) {
     $stmt = $db->prepare("SELECT p.*, c.nombre as cliente FROM pedidos p LEFT JOIN clientes c ON p.cliente_id = c.id WHERE p.id = ?");
@@ -89,9 +91,20 @@ if ($pedidoId > 0) {
         $stmt->execute([$pedidoId]);
         $integrantes = $stmt->fetchAll();
         
+        // CORREGIDO: Obtener diseños finales indexados por tipo
         $stmt = $db->prepare("SELECT * FROM disenos_finales WHERE pedido_id = ?");
         $stmt->execute([$pedidoId]);
-        $disenosActuales = $stmt->fetchAll(PDO::FETCH_GROUP | PDO::FETCH_ASSOC);
+        $disenosActualesRaw = $stmt->fetchAll();
+        
+        // Indexar por tipo para fácil acceso
+        foreach ($disenosActualesRaw as $d) {
+            $disenosActuales[$d['tipo']] = $d;
+        }
+        
+        // NUEVO: Obtener diseños iniciales del pedido
+        $stmt = $db->prepare("SELECT * FROM disenos_iniciales WHERE pedido_id = ? ORDER BY id");
+        $stmt->execute([$pedidoId]);
+        $disenosIniciales = $stmt->fetchAll();
     }
 }
 ?>
@@ -132,6 +145,31 @@ if ($pedidoId > 0) {
         .sector-badge{position:absolute;top:8px;left:8px;background:var(--success);color:white;border-radius:20px;padding:2px 10px;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;display:none;}
         .sector-badge.show{display:block;}
         
+        /* Botón de subir */
+        .btn-upload{
+            background:linear-gradient(135deg, var(--primary) 0%, #1a4fff 100%);
+            color:white;
+            border:none;
+            border-radius:8px;
+            padding:10px 20px;
+            font-family:'Barlow Condensed',sans-serif;
+            font-weight:700;
+            font-size:.85rem;
+            text-transform:uppercase;
+            letter-spacing:1px;
+            cursor:pointer;
+            transition:all .3s;
+            margin-top:12px;
+            display:inline-flex;
+            align-items:center;
+            gap:8px;
+        }
+        .btn-upload:hover{
+            transform:translateY(-2px);
+            box-shadow:0 4px 15px rgba(43,79,255,.4);
+        }
+        .btn-upload i{font-size:1rem;}
+        
         /* Integrantes tabla */
         .integrantes-tabla{width:100%;border-collapse:collapse;}
         .integrantes-tabla thead th{background:var(--sidebar-bg);color:rgba(255,255,255,.5);padding:8px 14px;font-family:'Barlow Condensed',sans-serif;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;}
@@ -139,6 +177,73 @@ if ($pedidoId > 0) {
         .integrantes-tabla tbody tr:hover{background:#f8faff;}
         .integrantes-tabla tbody td{padding:9px 14px;font-size:.85rem;vertical-align:middle;}
         .talla-badge{display:inline-block;background:rgba(43,79,255,.1);color:var(--primary);border-radius:6px;padding:2px 8px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:.88rem;}
+        
+        /* Sección de diseños iniciales */
+        .disenos-iniciales-section{
+            background:linear-gradient(135deg, #f8f9ff 0%, #fff 100%);
+            border:1px solid var(--border);
+            border-radius:14px;
+            padding:20px;
+            margin-bottom:24px;
+        }
+        .disenos-iniciales-title{
+            font-family:'Barlow Condensed',sans-serif;
+            font-size:1rem;
+            font-weight:800;
+            text-transform:uppercase;
+            letter-spacing:1px;
+            color:var(--primary);
+            margin-bottom:16px;
+            display:flex;
+            align-items:center;
+            gap:10px;
+        }
+        .diseno-inicial-grid{
+            display:grid;
+            grid-template-columns:repeat(auto-fill, minmax(200px, 1fr));
+            gap:16px;
+        }
+        .diseno-inicial-item{
+            position:relative;
+            border-radius:10px;
+            overflow:hidden;
+            box-shadow:0 2px 10px rgba(0,0,0,.08);
+            transition:transform .3s;
+        }
+        .diseno-inicial-item:hover{
+            transform:scale(1.02);
+        }
+        .diseno-inicial-item img{
+            width:100%;
+            height:180px;
+            object-fit:cover;
+        }
+        .diseno-inicial-badge{
+            position:absolute;
+            top:8px;
+            left:8px;
+            background:rgba(43,79,255,.9);
+            color:white;
+            border-radius:20px;
+            padding:3px 10px;
+            font-size:.7rem;
+            font-weight:700;
+            text-transform:uppercase;
+        }
+        
+        /* Mensaje de éxito */
+        .alert-success-custom{
+            background:rgba(6,214,160,.1);
+            border:1px solid var(--success);
+            border-radius:10px;
+            padding:12px 20px;
+            color:#047857;
+            font-weight:600;
+            display:flex;
+            align-items:center;
+            gap:10px;
+            margin-bottom:20px;
+        }
     </style>
 </head>
 <body>
@@ -209,11 +314,41 @@ if ($pedidoId > 0) {
     </div>
 
     <?php if ($pedido): ?>
+    
+    <!-- NUEVO: Sección de Diseños Iniciales -->
+    <?php if (count($disenosIniciales) > 0): ?>
+    <div class="disenos-iniciales-section">
+        <div class="disenos-iniciales-title">
+            <i class="fas fa-image"></i> Diseño Inicial del Cliente
+        </div>
+        <div class="diseno-inicial-grid">
+            <?php foreach ($disenosIniciales as $index => $di): ?>
+            <div class="diseno-inicial-item">
+                <img src="<?php echo htmlspecialchars($di['imagen_path']); ?>" alt="Diseño inicial <?php echo $index + 1; ?>" onerror="this.src='assets/img/placeholder.png'">
+                <span class="diseno-inicial-badge">Referencia <?php echo $index + 1; ?></span>
+            </div>
+            <?php endforeach; ?>
+        </div>
+        <?php if (!empty($disenosIniciales[0]['observaciones'])): ?>
+        <div style="margin-top:12px;padding:10px;background:rgba(43,79,255,.05);border-radius:8px;font-size:.85rem;">
+            <strong>Observaciones:</strong> <?php echo htmlspecialchars($disenosIniciales[0]['observaciones']); ?>
+        </div>
+        <?php endif; ?>
+    </div>
+    <?php endif; ?>
+
+    <!-- Mensaje de éxito -->
+    <?php if (!empty($success)): ?>
+    <div class="alert-success-custom">
+        <i class="fas fa-check-circle"></i> <?php echo $success; ?>
+    </div>
+    <?php endif; ?>
+
     <!-- Upload de diseños -->
     <div class="card-v">
         <div class="card-v-header">
             <h5 class="card-v-title"><i class="fas fa-images" style="margin-right:8px;"></i>Diseños Finales (máx. 3 fotos)</h5>
-            <span style="font-size:.78rem;color:var(--muted);">Haz clic en cada sector para subir</span>
+            <span style="font-size:.78rem;color:var(--muted);">Haz clic en el botón para subir cada diseño</span>
         </div>
         <div class="card-v-body">
             <form method="POST" id="formDiseno">
@@ -222,31 +357,55 @@ if ($pedidoId > 0) {
                 
                 <div class="upload-grid">
                     <!-- Camiseta -->
-                    <div class="upload-sector camiseta-grande" id="sector-camiseta" onclick="document.getElementById('file-camiseta').click()">
+                    <div class="upload-sector camiseta-grande <?php echo isset($disenosActuales['camiseta']) ? 'has-image' : ''; ?>" id="sector-camiseta">
                         <input type="file" id="file-camiseta" hidden accept="image/*" onchange="handleUpload(this, 'camiseta')">
-                        <div class="sector-badge" id="badge-camiseta">✓ Subido</div>
+                        <div class="sector-badge <?php echo isset($disenosActuales['camiseta']) ? 'show' : ''; ?>" id="badge-camiseta">✓ Subido</div>
+                        <?php if (isset($disenosActuales['camiseta'])): ?>
+                        <img class="sector-preview" id="preview-camiseta" src="<?php echo htmlspecialchars($disenosActuales['camiseta']['imagen_path']); ?>" style="display:block;">
+                        <i class="fas fa-tshirt sector-icon" id="icon-camiseta" style="display:none;"></i>
+                        <?php else: ?>
                         <img class="sector-preview" id="preview-camiseta">
                         <i class="fas fa-tshirt sector-icon" id="icon-camiseta"></i>
+                        <?php endif; ?>
                         <div class="sector-label" id="label-camiseta">Camiseta</div>
                         <div class="sector-sub">Diseño frontal y posterior</div>
+                        <button type="button" class="btn-upload" onclick="event.stopPropagation(); document.getElementById('file-camiseta').click();">
+                            <i class="fas fa-cloud-upload-alt"></i> Subir Camiseta
+                        </button>
                     </div>
                     <!-- Short -->
-                    <div class="upload-sector" id="sector-short" onclick="document.getElementById('file-short').click()">
+                    <div class="upload-sector <?php echo isset($disenosActuales['short']) ? 'has-image' : ''; ?>" id="sector-short">
                         <input type="file" id="file-short" hidden accept="image/*" onchange="handleUpload(this, 'short')">
-                        <div class="sector-badge" id="badge-short">✓ Subido</div>
+                        <div class="sector-badge <?php echo isset($disenosActuales['short']) ? 'show' : ''; ?>" id="badge-short">✓ Subido</div>
+                        <?php if (isset($disenosActuales['short'])): ?>
+                        <img class="sector-preview" id="preview-short" src="<?php echo htmlspecialchars($disenosActuales['short']['imagen_path']); ?>" style="display:block;">
+                        <i class="fas fa-running sector-icon" id="icon-short" style="display:none;"></i>
+                        <?php else: ?>
                         <img class="sector-preview" id="preview-short">
                         <i class="fas fa-running sector-icon" id="icon-short"></i>
+                        <?php endif; ?>
                         <div class="sector-label" id="label-short">Short</div>
                         <div class="sector-sub">Diseño del short</div>
+                        <button type="button" class="btn-upload" onclick="event.stopPropagation(); document.getElementById('file-short').click();">
+                            <i class="fas fa-cloud-upload-alt"></i> Subir Short
+                        </button>
                     </div>
                     <!-- Banderola -->
-                    <div class="upload-sector" id="sector-banderola" onclick="document.getElementById('file-banderola').click()">
+                    <div class="upload-sector <?php echo isset($disenosActuales['banderola']) ? 'has-image' : ''; ?>" id="sector-banderola">
                         <input type="file" id="file-banderola" hidden accept="image/*" onchange="handleUpload(this, 'banderola')">
-                        <div class="sector-badge" id="badge-banderola">✓ Subido</div>
+                        <div class="sector-badge <?php echo isset($disenosActuales['banderola']) ? 'show' : ''; ?>" id="badge-banderola">✓ Subido</div>
+                        <?php if (isset($disenosActuales['banderola'])): ?>
+                        <img class="sector-preview" id="preview-banderola" src="<?php echo htmlspecialchars($disenosActuales['banderola']['imagen_path']); ?>" style="display:block;">
+                        <i class="fas fa-flag sector-icon" id="icon-banderola" style="display:none;"></i>
+                        <?php else: ?>
                         <img class="sector-preview" id="preview-banderola">
                         <i class="fas fa-flag sector-icon" id="icon-banderola"></i>
+                        <?php endif; ?>
                         <div class="sector-label" id="label-banderola">Banderola</div>
                         <div class="sector-sub">Si corresponde al pedido</div>
+                        <button type="button" class="btn-upload" onclick="event.stopPropagation(); document.getElementById('file-banderola').click();">
+                            <i class="fas fa-cloud-upload-alt"></i> Subir Banderola
+                        </button>
                     </div>
                 </div>
 
