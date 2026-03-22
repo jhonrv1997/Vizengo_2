@@ -170,6 +170,33 @@ if ($pedidoId > 0) {
         }
         .btn-upload i{font-size:1rem;}
         
+        /* Botón de confirmar */
+        .btn-confirm{
+            background:linear-gradient(135deg, var(--success) 0%, #05a855 100%);
+            color:white;
+            border:none;
+            border-radius:8px;
+            padding:10px 20px;
+            font-family:'Barlow Condensed',sans-serif;
+            font-weight:700;
+            font-size:.85rem;
+            text-transform:uppercase;
+            letter-spacing:1px;
+            cursor:pointer;
+            transition:all .3s;
+            margin-top:8px;
+            display:none;
+            align-items:center;
+            justify-content:center;
+            gap:8px;
+            width:100%;
+        }
+        .btn-confirm:hover{
+            transform:translateY(-2px);
+            box-shadow:0 4px 15px rgba(6,214,160,.4);
+        }
+        .btn-confirm.show{display:flex;}
+        
         /* Integrantes tabla */
         .integrantes-tabla{width:100%;border-collapse:collapse;}
         .integrantes-tabla thead th{background:var(--sidebar-bg);color:rgba(255,255,255,.5);padding:8px 14px;font-family:'Barlow Condensed',sans-serif;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;}
@@ -370,7 +397,10 @@ if ($pedidoId > 0) {
                         <div class="sector-label" id="label-camiseta">Camiseta</div>
                         <div class="sector-sub">Diseño frontal y posterior</div>
                         <button type="button" class="btn-upload" onclick="event.stopPropagation(); document.getElementById('file-camiseta').click();">
-                            <i class="fas fa-cloud-upload-alt"></i> Subir Camiseta
+                            <i class="fas fa-cloud-upload-alt"></i> Seleccionar Imagen
+                        </button>
+                        <button type="button" class="btn-confirm" id="confirm-camiseta" onclick="event.stopPropagation(); confirmUpload('camiseta');">
+                            <i class="fas fa-check"></i> Confirmar Subida
                         </button>
                     </div>
                     <!-- Short -->
@@ -387,7 +417,10 @@ if ($pedidoId > 0) {
                         <div class="sector-label" id="label-short">Short</div>
                         <div class="sector-sub">Diseño del short</div>
                         <button type="button" class="btn-upload" onclick="event.stopPropagation(); document.getElementById('file-short').click();">
-                            <i class="fas fa-cloud-upload-alt"></i> Subir Short
+                            <i class="fas fa-cloud-upload-alt"></i> Seleccionar Imagen
+                        </button>
+                        <button type="button" class="btn-confirm" id="confirm-short" onclick="event.stopPropagation(); confirmUpload('short');">
+                            <i class="fas fa-check"></i> Confirmar Subida
                         </button>
                     </div>
                     <!-- Banderola -->
@@ -404,7 +437,10 @@ if ($pedidoId > 0) {
                         <div class="sector-label" id="label-banderola">Banderola</div>
                         <div class="sector-sub">Si corresponde al pedido</div>
                         <button type="button" class="btn-upload" onclick="event.stopPropagation(); document.getElementById('file-banderola').click();">
-                            <i class="fas fa-cloud-upload-alt"></i> Subir Banderola
+                            <i class="fas fa-cloud-upload-alt"></i> Seleccionar Imagen
+                        </button>
+                        <button type="button" class="btn-confirm" id="confirm-banderola" onclick="event.stopPropagation(); confirmUpload('banderola');">
+                            <i class="fas fa-check"></i> Confirmar Subida
                         </button>
                     </div>
                 </div>
@@ -458,6 +494,9 @@ if ($pedidoId > 0) {
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="assets/js/app.js"></script>
 <script>
+// Almacena las imágenes seleccionadas pendientes de confirmar
+let pendingImages = {};
+
 function seleccionarPedido(id) {
     if (id) window.location.href = '?pedido_id=' + id;
 }
@@ -472,17 +511,30 @@ function handleUpload(input, tipo) {
         document.getElementById('preview-' + tipo).src = e.target.result;
         document.getElementById('preview-' + tipo).style.display = 'block';
         document.getElementById('icon-' + tipo).style.display = 'none';
-        document.getElementById('badge-' + tipo).classList.add('show');
         document.getElementById('sector-' + tipo).classList.add('has-image');
         
-        // Guardar para envío
-        document.getElementById('imagenBase64').value = e.target.result;
-        document.getElementById('tipoDiseno').value = tipo;
+        // Guardar imagen pendiente de confirmación
+        pendingImages[tipo] = e.target.result;
         
-        // Enviar formulario
-        document.getElementById('formDiseno').submit();
+        // Mostrar botón de confirmar y ocultar badge de "Subido"
+        document.getElementById('confirm-' + tipo).classList.add('show');
+        document.getElementById('badge-' + tipo).classList.remove('show');
     };
     reader.readAsDataURL(file);
+}
+
+function confirmUpload(tipo) {
+    if (!pendingImages[tipo]) {
+        alert('Por favor, selecciona una imagen primero.');
+        return;
+    }
+    
+    // Guardar para envío
+    document.getElementById('imagenBase64').value = pendingImages[tipo];
+    document.getElementById('tipoDiseno').value = tipo;
+    
+    // Enviar formulario
+    document.getElementById('formDiseno').submit();
 }
 </script>
 </body>
