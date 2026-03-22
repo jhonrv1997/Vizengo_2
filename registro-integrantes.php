@@ -448,9 +448,11 @@ $tallas = ['2','4','6','8','10','12','14','16','XS','S','M','L','XL','XXL'];
                         <button type="submit" class="btn-v btn-success-v" style="width:100%;justify-content:center;">
                             <i class="fas fa-check-double"></i> Confirmar y Guardar
                         </button>
-                        <a href="diseno.php?pedido_id=<?php echo $pedido['id']; ?>" class="btn-v btn-primary-v" style="width:100%;justify-content:center;text-decoration:none;">
-                            <i class="fas fa-paint-brush"></i> Ir a Diseño
-                        </a>
+						<?php if ($user['rol'] !== 'vendedor'): ?>
+						<a href="diseno.php?pedido_id=<?php echo $pedido['id']; ?>" class="btn-v btn-primary-v" ...>
+							<i class="fas fa-paint-brush"></i> Ir a Diseño
+						</a>
+						<?php endif; ?>
                     </div>
                 </div>
             </div>

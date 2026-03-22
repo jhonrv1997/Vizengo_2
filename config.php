@@ -5,15 +5,15 @@
  */
 
 // Configuración de la base de datos
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'vizengo_db');
-define('DB_USER', 'root'); // Cambiar en producción
-define('DB_PASS', '');     // Cambiar en producción
+define('DB_HOST', 'sql201.infinityfree.com');
+define('DB_NAME', 'if0_41135893_vizengo');
+define('DB_USER', 'if0_41135893'); // Cambiar en producción
+define('DB_PASS', 'u1S1h9Kc1h');     // Cambiar en producción
 define('DB_CHARSET', 'utf8mb4');
 
 // Configuración del sitio
 define('SITE_NAME', 'VIZENGO');
-define('SITE_URL', 'http://localhost/vizengo'); // Cambiar en producción
+define('SITE_URL', 'https://pruebasvizengo.gt.tc'); // Cambiar en producción
 define('UPLOAD_PATH', __DIR__ . '/uploads/');
 define('MAX_FILE_SIZE', 5 * 1024 * 1024); // 5MB
 
@@ -50,6 +50,10 @@ class Database {
                 PDO::ATTR_EMULATE_PREPARES => false,
             ];
             $this->connection = new PDO($dsn, DB_USER, DB_PASS, $options);
+			
+			//zona horaria lima/peru
+			$this->connection->exec("SET time_zone = '-05:00'");
+			
         } catch (PDOException $e) {
             if (DEV_MODE) {
                 die("Error de conexión: " . $e->getMessage());
