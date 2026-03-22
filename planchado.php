@@ -45,7 +45,9 @@ $pedido = null;
 
 if ($pedidoId > 0) {
     $stmt = $db->prepare("SELECT p.*, c.nombre as cliente, c.celular as cliente_celular,
-                          (SELECT COUNT(*) FROM integrantes i WHERE i.pedido_id = p.id) as total_integrantes
+                          (SELECT COUNT(*) FROM integrantes i WHERE i.pedido_id = p.id) as total_integrantes,
+                          (SELECT camiseta_tipo FROM kits k WHERE k.pedido_id = p.id LIMIT 1) as camiseta_tipo,
+                          (SELECT short_tipo FROM kits k WHERE k.pedido_id = p.id LIMIT 1) as short_tipo
                           FROM pedidos p LEFT JOIN clientes c ON p.cliente_id = c.id WHERE p.id = ?");
     $stmt->execute([$pedidoId]);
     $pedido = $stmt->fetch();
@@ -64,7 +66,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $observaciones = sanitize($_POST['observaciones'] ?? '');
     $fechaPlanchado = $_POST['fecha_planchado'] ?? date('Y-m-d');
     
-    $totalPago = ($cantPolos * $precioPolo) + ($cantShorts * $precioShort) + ($cantCuellos * $precioCuello);
+    // Calcular total de merchandising
+    $totalMerch = 0;
+    $merchItems = [];
+    if (isset($_POST['merch_tipo']) && is_array($_POST['merch_tipo'])) {
+        foreach ($_POST['merch_tipo'] as $i => $tipo) {
+            $cant = intval($_POST['merch_cantidad'][$i] ?? 0);
+            $precio = floatval($_POST['merch_precio'][$i] ?? 0);
+            
+            // Si es "Otros", buscar el valor especificado
+            if ($tipo === 'Otros') {
+                // Buscar el campo merch_otro correspondiente
+                foreach ($_POST as $key => $value) {
+                    if (strpos($key, 'merch_otro_') === 0 && !empty($value)) {
+                        $tipo = sanitize($value);
+                        break;
+                    }
+                }
+            }
+            
+            if (!empty($tipo) && $cant > 0) {
+                $merchItems[] = [
+                    'tipo' => sanitize($tipo),
+                    'cantidad' => $cant,
+                    'precio' => $precio
+                ];
+                $totalMerch += $cant * $precio;
+            }
+        }
+    }
+    
+    $totalPago = ($cantPolos * $precioPolo) + ($cantShorts * $precioShort) + ($cantCuellos * $precioCuello) + $totalMerch;
     
     if ($pedidoId > 0 && !empty($planchadorNombre)) {
         $db->beginTransaction();
@@ -75,6 +107,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                   planchador_nombre = VALUES(planchador_nombre), cant_polos = VALUES(cant_polos), cant_shorts = VALUES(cant_shorts), cant_cuellos = VALUES(cant_cuellos),
                                   precio_polo = VALUES(precio_polo), precio_short = VALUES(precio_short), precio_cuello = VALUES(precio_cuello), total_pago = VALUES(total_pago), observaciones = VALUES(observaciones), fecha_planchado = VALUES(fecha_planchado)");
             $stmt->execute([$pedidoId, $planchadorNombre, $cantPolos, $cantShorts, $cantCuellos, $precioPolo, $precioShort, $precioCuello, $totalPago, $observaciones, $fechaPlanchado]);
+            
+            // Guardar merchandising
+            $planchadoId = $db->lastInsertId();
+            if (!$planchadoId) {
+                $stmt = $db->prepare("SELECT id FROM planchado WHERE pedido_id = ?");
+                $stmt->execute([$pedidoId]);
+                $planchadoId = $stmt->fetchColumn();
+            }
+            
+            // Eliminar merchandising anterior
+            $db->prepare("DELETE FROM planchado_merchandising WHERE planchado_id = ?")->execute([$planchadoId]);
+            
+            // Insertar nuevos items de merchandising
+            $stmtMerch = $db->prepare("INSERT INTO planchado_merchandising (planchado_id, articulo, cantidad, precio_unitario) VALUES (?, ?, ?, ?)");
+            foreach ($merchItems as $item) {
+                $stmtMerch->execute([$planchadoId, $item['tipo'], $item['cantidad'], $item['precio']]);
+            }
             
             $stmt = $db->prepare("UPDATE pedidos SET estado_planchado = 'completo' WHERE id = ?");
             $stmt->execute([$pedidoId]);
@@ -126,6 +175,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .total-box{background:var(--sidebar-bg);border-radius:14px;padding:24px;color:white;text-align:center;}
         .total-label{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,.4);margin-bottom:8px;}
         .total-amount{font-family:'Barlow Condensed',sans-serif;font-size:3rem;font-weight:800;color:var(--success);line-height:1;}
+        
+        /* Merchandising */
+        .merch-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;}
+        .merch-title{display:flex;align-items:center;gap:10px;font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:700;color:var(--warning);margin-bottom:16px;padding-bottom:12px;border-bottom:1px dashed var(--border);}
+        .merch-title i{color:var(--warning);}
+        .merch-item{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:12px;position:relative;}
+        .merch-item-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+        .merch-item-num{font-weight:700;color:var(--text);font-size:.85rem;}
+        .btn-remove-merch{background:var(--danger);color:white;border:none;border-radius:6px;width:28px;height:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+        .btn-remove-merch:hover{opacity:.8;transform:scale(1.05);}
+        .btn-add-merch{background:var(--warning);color:var(--sidebar-bg);border:none;border-radius:8px;padding:10px 20px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .2s;}
+        .btn-add-merch:hover{opacity:.9;transform:translateY(-2px);}
+        .otro-articulo-input{display:none;margin-top:8px;}
+        .otro-articulo-input.show{display:block;}
     </style>
 </head>
 <body>
@@ -229,6 +292,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="col-md-4">
                         <div class="qty-card">
                             <div class="qty-label">Polos / Camisetas</div>
+                            <?php if (!empty($pedido['camiseta_tipo'])): ?>
+                            <div style="font-size:0.72rem;color:var(--info);font-weight:600;margin-bottom:4px;"><i class="fas fa-tag" style="margin-right:4px;"></i><?php echo htmlspecialchars($pedido['camiseta_tipo']); ?></div>
+                            <?php endif; ?>
                             <div class="qty-controls">
                                 <button type="button" hidden class="qty-btn minus" onclick="cambiarQty('cant_polos',-1)"><i class="fas fa-minus"></i></button>
                                 <input type="number" readonly class="qty-input" id="cant_polos" name="cant_polos" value="<?php echo $pedido['total_integrantes']; ?>" min="0" oninput="calcularTotal()">
@@ -244,6 +310,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="col-md-4">
                         <div class="qty-card">
                             <div class="qty-label">Shorts</div>
+                            <?php if (!empty($pedido['short_tipo'])): ?>
+                            <div style="font-size:0.72rem;color:var(--info);font-weight:600;margin-bottom:4px;"><i class="fas fa-tag" style="margin-right:4px;"></i><?php echo htmlspecialchars($pedido['short_tipo']); ?></div>
+                            <?php endif; ?>
                             <div class="qty-controls">
                                 <button type="button" hidden class="qty-btn minus" onclick="cambiarQty('cant_shorts',-1)"><i class="fas fa-minus"></i></button>
                                 <input type="number" readonly class="qty-input" id="cant_shorts" name="cant_shorts" value="<?php echo $pedido['total_integrantes']; ?>" min="0" oninput="calcularTotal()">
@@ -297,6 +366,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         </div>
 
+        <!-- Sección de Merchandising con múltiples artículos -->
+        <div class="merch-card mb-4">
+            <div class="merch-title">
+                <span><i class="fas fa-flag"></i>Merchandising Adicional</span>
+            </div>
+            
+            <!-- Contenedor de artículos de merchandising -->
+            <div id="merchContainer">
+                <!-- Los artículos se agregarán dinámicamente aquí -->
+            </div>
+            
+            <!-- Botón Agregar -->
+            <button type="button" class="btn-add-merch" onclick="agregarMerch()">
+                <i class="fas fa-plus"></i> Agregar Artículo
+            </button>
+        </div>
+
         <div style="display:flex;justify-content:flex-end;gap:12px;margin-bottom:28px;">
             <a href="lista-pedidos.php" class="btn-v btn-outline-v">Cancelar</a>
             <button type="submit" class="btn-v btn-success-v" style="background:var(--info);">
@@ -325,11 +411,98 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="assets/js/app.js"></script>
 <script>
+let merchCounter = 0;
+
 function cambiarQty(id, delta) {
     const input = document.getElementById(id);
     const val = parseInt(input.value) || 0;
     input.value = Math.max(0, val + delta);
     calcularTotal();
+}
+
+// Función para agregar un nuevo artículo de merchandising
+function agregarMerch() {
+    merchCounter++;
+    const container = document.getElementById('merchContainer');
+    
+    const merchItem = document.createElement('div');
+    merchItem.className = 'merch-item';
+    merchItem.id = `merchItem_${merchCounter}`;
+    
+    merchItem.innerHTML = `
+        <div class="merch-item-header">
+            <span class="merch-item-num"><i class="fas fa-tag" style="margin-right:4px;"></i>Artículo #${merchCounter}</span>
+            <button type="button" class="btn-remove-merch" onclick="eliminarMerch(${merchCounter})" title="Eliminar artículo">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="field-lbl">Tipo de Artículo</label>
+                <select class="field-ctrl" name="merch_tipo[]" onchange="toggleOtroArticulo(this, ${merchCounter})">
+                    <option value="">— Seleccionar —</option>
+                    <option value="Banderola">Banderola</option>
+                    <option value="Bandera">Bandera</option>
+                    <option value="Pañuelo">Pañuelo</option>
+                    <option value="Otros">Otros</option>
+                </select>
+                <div class="otro-articulo-input" id="otroArticulo_${merchCounter}">
+                    <input type="text" class="field-ctrl" name="merch_otro_${merchCounter}" placeholder="Especifique el tipo de artículo..." oninput="actualizarTipoMerch(this, ${merchCounter})">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="field-lbl">Cantidad</label>
+                <input type="number" class="field-ctrl text-center" name="merch_cantidad[]" id="cantMerch_${merchCounter}" value="0" min="0" oninput="calcularTotal()">
+            </div>
+            <div class="col-md-3">
+                <label class="field-lbl">Precio Unitario (S/)</label>
+                <div style="display:flex;align-items:center;gap:6px;">
+                    <span style="font-weight:700;color:var(--warning);">S/</span>
+                    <input type="number" class="field-ctrl" name="merch_precio[]" id="precioMerch_${merchCounter}" value="0.00" step="0.10" min="0" oninput="calcularTotal()">
+                </div>
+            </div>
+            <div class="col-md-2">
+                <label class="field-lbl">Subtotal</label>
+                <div style="font-weight:700;color:var(--warning);font-size:1.1rem;padding-top:8px;" id="subtotalMerch_${merchCounter}">S/ 0.00</div>
+            </div>
+        </div>
+        <input type="hidden" name="merch_tipo_real_${merchCounter}" id="merchTipoReal_${merchCounter}" value="">
+    `;
+    
+    container.appendChild(merchItem);
+    
+    // Scroll suave al nuevo elemento
+    merchItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// Función para eliminar un artículo de merchandising
+function eliminarMerch(id) {
+    const item = document.getElementById(`merchItem_${id}`);
+    if (item) {
+        item.remove();
+        calcularTotal();
+    }
+}
+
+// Función para mostrar/ocultar el campo "Otros"
+function toggleOtroArticulo(select, id) {
+    const otroInput = document.getElementById(`otroArticulo_${id}`);
+    const tipoReal = document.getElementById(`merchTipoReal_${id}`);
+    
+    if (select.value === 'Otros') {
+        otroInput.classList.add('show');
+        tipoReal.value = '';
+    } else {
+        otroInput.classList.remove('show');
+        tipoReal.value = select.value;
+    }
+    calcularTotal();
+}
+
+// Función para actualizar el tipo real cuando se especifica "Otros"
+function actualizarTipoMerch(input, id) {
+    const tipoReal = document.getElementById(`merchTipoReal_${id}`);
+    tipoReal.value = input.value;
 }
 
 function calcularTotal() {
@@ -344,7 +517,27 @@ function calcularTotal() {
     const subPolos = polos * precioPolo;
     const subShorts = shorts * precioShort;
     const subCuellos = cuellos * precioCuello;
-    const total = subPolos + subShorts + subCuellos;
+    
+    // Calcular total de merchandising
+    let totalMerch = 0;
+    const cantidadInputs = document.querySelectorAll('[name="merch_cantidad[]"]');
+    const precioInputs = document.querySelectorAll('[name="merch_precio[]"]');
+    
+    cantidadInputs.forEach((cantInput, index) => {
+        const cant = parseInt(cantInput.value) || 0;
+        const precio = parseFloat(precioInputs[index]?.value) || 0;
+        const merchId = cantInput.id.replace('cantMerch_', '');
+        const subtotalEl = document.getElementById(`subtotalMerch_${merchId}`);
+        
+        const subtotal = cant * precio;
+        totalMerch += subtotal;
+        
+        if (subtotalEl) {
+            subtotalEl.textContent = 'S/ ' + subtotal.toFixed(2);
+        }
+    });
+    
+    const total = subPolos + subShorts + subCuellos + totalMerch;
     
     document.getElementById('subPolos').textContent = 'S/ ' + subPolos.toFixed(2);
     document.getElementById('subShorts').textContent = 'S/ ' + subShorts.toFixed(2);

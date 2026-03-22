@@ -228,9 +228,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <div class="qty-label">Polos / Camisetas</div>
                             <div class="qty-type">POLOS</div>
                             <div class="qty-controls">
-                                <button type="button" class="qty-btn minus" onclick="cambiarQty('cant_polos',-1)"><i class="fas fa-minus"></i></button>
-                                <input type="number" class="qty-input" id="cant_polos" name="cant_polos" value="<?php echo $pedido['total_integrantes']; ?>" min="0" oninput="calcularTotal()">
-                                <button type="button" class="qty-btn plus" onclick="cambiarQty('cant_polos',1)"><i class="fas fa-plus"></i></button>
+                                <button type="button" hidden class="qty-btn minus" onclick="cambiarQty('cant_polos',-1)"><i class="fas fa-minus"></i></button>
+                                <input type="number" readonly class="qty-input" id="cant_polos" name="cant_polos" value="<?php echo $pedido['total_integrantes']; ?>" min="0" oninput="calcularTotal()">
+                                <button type="button" hidden class="qty-btn plus" onclick="cambiarQty('cant_polos',1)"><i class="fas fa-plus"></i></button>
                             </div>
                             <div style="display:flex;align-items:center;gap:6px;margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);">
                                 <label style="font-size:.68rem;font-weight:700;text-transform:uppercase;color:var(--muted);">Precio Unit.</label>
@@ -244,9 +244,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <div class="qty-label">Shorts</div>
                             <div class="qty-type" style="background:rgba(6,214,160,.1);color:var(--success);">SHORTS</div>
                             <div class="qty-controls">
-                                <button type="button" class="qty-btn minus" onclick="cambiarQty('cant_shorts',-1)"><i class="fas fa-minus"></i></button>
-                                <input type="number" class="qty-input" id="cant_shorts" name="cant_shorts" value="<?php echo $pedido['total_integrantes']; ?>" min="0" oninput="calcularTotal()">
-                                <button type="button" class="qty-btn plus" onclick="cambiarQty('cant_shorts',1)"><i class="fas fa-plus"></i></button>
+                                <button type="button" hidden class="qty-btn minus" onclick="cambiarQty('cant_shorts',-1)"><i class="fas fa-minus"></i></button>
+                                <input type="number" readonly class="qty-input" id="cant_shorts" name="cant_shorts" value="<?php echo $pedido['total_integrantes']; ?>" min="0" oninput="calcularTotal()">
+                                <button type="button" hidden class="qty-btn plus" onclick="cambiarQty('cant_shorts',1)"><i class="fas fa-plus"></i></button>
                             </div>
                             <div style="display:flex;align-items:center;gap:6px;margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);">
                                 <label style="font-size:.68rem;font-weight:700;text-transform:uppercase;color:var(--muted);">Precio Unit.</label>
