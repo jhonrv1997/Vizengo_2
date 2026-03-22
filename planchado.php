@@ -230,9 +230,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="qty-card">
                             <div class="qty-label">Polos / Camisetas</div>
                             <div class="qty-controls">
-                                <button type="button" class="qty-btn minus" onclick="cambiarQty('cant_polos',-1)"><i class="fas fa-minus"></i></button>
-                                <input type="number" class="qty-input" id="cant_polos" name="cant_polos" value="<?php echo $pedido['total_integrantes']; ?>" min="0" oninput="calcularTotal()">
-                                <button type="button" class="qty-btn plus" onclick="cambiarQty('cant_polos',1)"><i class="fas fa-plus"></i></button>
+                                <button type="button" hidden class="qty-btn minus" onclick="cambiarQty('cant_polos',-1)"><i class="fas fa-minus"></i></button>
+                                <input type="number" readonly class="qty-input" id="cant_polos" name="cant_polos" value="<?php echo $pedido['total_integrantes']; ?>" min="0" oninput="calcularTotal()">
+                                <button type="button" hidden class="qty-btn plus" onclick="cambiarQty('cant_polos',1)"><i class="fas fa-plus"></i></button>
                             </div>
                             <div class="price-input-group">
                                 <label>Precio Unit.</label>
@@ -245,9 +245,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="qty-card">
                             <div class="qty-label">Shorts</div>
                             <div class="qty-controls">
-                                <button type="button" class="qty-btn minus" onclick="cambiarQty('cant_shorts',-1)"><i class="fas fa-minus"></i></button>
-                                <input type="number" class="qty-input" id="cant_shorts" name="cant_shorts" value="<?php echo $pedido['total_integrantes']; ?>" min="0" oninput="calcularTotal()">
-                                <button type="button" class="qty-btn plus" onclick="cambiarQty('cant_shorts',1)"><i class="fas fa-plus"></i></button>
+                                <button type="button" hidden class="qty-btn minus" onclick="cambiarQty('cant_shorts',-1)"><i class="fas fa-minus"></i></button>
+                                <input type="number" readonly class="qty-input" id="cant_shorts" name="cant_shorts" value="<?php echo $pedido['total_integrantes']; ?>" min="0" oninput="calcularTotal()">
+                                <button type="button" hidden class="qty-btn plus" onclick="cambiarQty('cant_shorts',1)"><i class="fas fa-plus"></i></button>
                             </div>
                             <div class="price-input-group">
                                 <label>Precio Unit.</label>
