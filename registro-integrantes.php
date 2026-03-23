@@ -52,9 +52,11 @@ if ($pedidoId === 0) {
     }
     
     // Obtener la cantidad total de kits (suma del campo cantidad)
-    $stmt = $db->prepare("SELECT COALESCE(SUM(cantidad), 0) as total_kits FROM kits WHERE pedido_id = ?");
-    $stmt->execute([$pedidoId]);
-    $result = $stmt->fetch();
+	 $stmt = $db->prepare("SELECT 
+		COALESCE((SELECT SUM(cantidad) FROM kits WHERE pedido_id = ?), 0) + 
+		COALESCE((SELECT SUM(cantidad) FROM adicionales_talla WHERE pedido_id = ?), 0) as total_kits");
+	 $stmt->execute([$pedidoId, $pedidoId]);
+	 $result = $stmt->fetch();
     $cantidadMaximaKits = intval($result['total_kits']);
     
     // Cargar integrantes existentes
@@ -70,11 +72,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $imagenLista = $_POST['imagen_lista'] ?? '';
     
     if ($pedidoId > 0) {
-        // Obtener cantidad máxima de kits para validación
-        $stmt = $db->prepare("SELECT COALESCE(SUM(cantidad), 0) as total_kits FROM kits WHERE pedido_id = ?");
-        $stmt->execute([$pedidoId]);
-        $result = $stmt->fetch();
-        $cantidadMaximaKitsPost = intval($result['total_kits']);
+// Obtener cantidad máxima de kits para validación (kits + adicionales_talla)
+	 $stmt = $db->prepare("SELECT 
+		COALESCE((SELECT SUM(cantidad) FROM kits WHERE pedido_id = ?), 0) + 
+		COALESCE((SELECT SUM(cantidad) FROM adicionales_talla WHERE pedido_id = ?), 0) as total_kits");
+	 $stmt->execute([$pedidoId, $pedidoId]);
+	 $result = $stmt->fetch();
+	 $cantidadMaximaKitsPost = intval($result['total_kits']);
         
         $db->beginTransaction();
         try {
