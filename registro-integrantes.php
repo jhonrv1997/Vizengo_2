@@ -727,11 +727,20 @@ document.getElementById('formIntegrantes')?.addEventListener('submit', function(
     document.getElementById('integrantesJson').value = JSON.stringify(integrantes);
 });
 
-// Iniciar con filas vacías si no hay integrantes
+// Iniciar con filas según cantidad máxima de kits
 document.addEventListener('DOMContentLoaded', function() {
     actualizarResumen();
     <?php if (empty($integrantes)): ?>
-    for (let i = 0; i < 12; i++) agregarFila();
+    // Crear filas según la cantidad máxima de kits (o 1 como mínimo si no hay kits definidos)
+    const filasIniciales = cantidadMaximaKits > 0 ? cantidadMaximaKits : 1;
+    for (let i = 0; i < filasIniciales; i++) agregarFila();
+    <?php else: ?>
+    // Si hay integrantes existentes pero menos que el máximo, completar las filas restantes
+    const integrantesActuales = <?php echo count($integrantes); ?>;
+    if (cantidadMaximaKits > 0 && integrantesActuales < cantidadMaximaKits) {
+        const filasFaltantes = cantidadMaximaKits - integrantesActuales;
+        for (let i = 0; i < filasFaltantes; i++) agregarFila();
+    }
     <?php endif; ?>
 });
 </script>
