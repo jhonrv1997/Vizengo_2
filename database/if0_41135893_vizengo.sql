@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: sql201.infinityfree.com
--- Tiempo de generación: 22-03-2026 a las 10:48:22
+-- Tiempo de generación: 23-03-2026 a las 20:10:10
 -- Versión del servidor: 11.4.10-MariaDB
 -- Versión de PHP: 7.2.22
 
@@ -41,7 +41,8 @@ CREATE TABLE `adicionales_talla` (
 --
 
 INSERT INTO `adicionales_talla` (`id`, `pedido_id`, `talla`, `cantidad`, `precio_unitario`) VALUES
-(2, 4, 'XL', 1, '12.00');
+(2, 4, 'XL', 1, '12.00'),
+(3, 9, 'XL', 1, '16.00');
 
 -- --------------------------------------------------------
 
@@ -68,7 +69,11 @@ INSERT INTO `clientes` (`id`, `nombre`, `celular`, `email`, `direccion`, `observ
 (2, 'Nitza', '', '', 'Av. Principal 123', NULL, '2026-03-21 17:16:22'),
 (3, 'Lizeth', '', '', 'Av. Principal 123', NULL, '2026-03-21 17:16:22'),
 (4, 'Karina', NULL, NULL, NULL, NULL, '2026-03-21 19:00:04'),
-(8, 'leslie perez', '996969695', NULL, NULL, NULL, '2026-03-21 23:04:30');
+(8, 'leslie perez', '996969695', NULL, NULL, NULL, '2026-03-21 23:04:30'),
+(9, 'alejandra paredes', '969696316', NULL, NULL, NULL, '2026-03-22 16:51:59'),
+(10, 'elena marinez', '969393697', NULL, NULL, NULL, '2026-03-22 20:17:18'),
+(11, 'luis marmolejo', '126165456', NULL, NULL, NULL, '2026-03-23 13:56:11'),
+(12, 'Liliana Smith', '969669301', NULL, NULL, NULL, '2026-03-23 23:24:44');
 
 -- --------------------------------------------------------
 
@@ -91,6 +96,13 @@ CREATE TABLE `costura` (
   `fecha_registro` timestamp NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci;
 
+--
+-- Volcado de datos para la tabla `costura`
+--
+
+INSERT INTO `costura` (`id`, `pedido_id`, `costurero_id`, `costurero_nombre`, `cant_polos`, `cant_shorts`, `precio_polo`, `precio_short`, `total_pago`, `observaciones`, `fecha_costura`, `fecha_registro`) VALUES
+(1, 4, NULL, 'Carmen', 6, 6, '2.00', '1.50', '24.00', 'tela adicionales', '2026-03-22', '2026-03-22 21:44:32');
+
 -- --------------------------------------------------------
 
 --
@@ -104,6 +116,13 @@ CREATE TABLE `costura_otros` (
   `cantidad` int(11) DEFAULT 1,
   `precio_unitario` decimal(10,2) DEFAULT 0.00
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci;
+
+--
+-- Volcado de datos para la tabla `costura_otros`
+--
+
+INSERT INTO `costura_otros` (`id`, `costura_id`, `descripcion`, `cantidad`, `precio_unitario`) VALUES
+(1, 1, 'cierre', 6, '0.50');
 
 -- --------------------------------------------------------
 
@@ -146,6 +165,18 @@ CREATE TABLE `disenos_finales` (
   `aprobado` tinyint(1) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci;
 
+--
+-- Volcado de datos para la tabla `disenos_finales`
+--
+
+INSERT INTO `disenos_finales` (`id`, `pedido_id`, `disenador_id`, `tipo`, `imagen_path`, `observaciones`, `fecha_subida`, `aprobado`) VALUES
+(1, 4, 3, 'camiseta', 'uploads/disenos/69c002fae2fc4_1774191354.jpeg', 'LOGO A LA IZQUIERDA', '2026-03-22 14:55:55', 1),
+(2, 4, 3, 'short', 'uploads/disenos/69c0030a70f16_1774191370.jpeg', 'LOGO A LA IZQUIERDA', '2026-03-22 14:56:10', 1),
+(3, 5, 3, 'camiseta', 'uploads/disenos/69c02423a8e10_1774199843.jpeg', 'LOGO A LA DERECHA BIEN BONITO', '2026-03-22 17:17:24', 1),
+(4, 5, 3, 'short', 'uploads/disenos/69c0243237e24_1774199858.jpeg', 'LOGO A LA DERECHA BIEN BONITO', '2026-03-22 17:17:38', 1),
+(5, 6, 3, 'camiseta', 'uploads/disenos/69c04ff514a36_1774211061.jpeg', 'TEXTO MOTIVACIONAL ya cumpli', '2026-03-22 20:24:20', 1),
+(6, 6, 3, 'short', 'uploads/disenos/69c05003887b6_1774211075.jpeg', 'TEXTO MOTIVACIONAL', '2026-03-22 20:24:34', 1);
+
 -- --------------------------------------------------------
 
 --
@@ -166,7 +197,12 @@ CREATE TABLE `disenos_iniciales` (
 
 INSERT INTO `disenos_iniciales` (`id`, `pedido_id`, `imagen_path`, `observaciones`, `fecha_subida`) VALUES
 (1, 4, 'uploads/referencias/69bf23fe844f7_1774134270.jpg', '', '2026-03-21 23:04:30'),
-(2, 4, 'uploads/referencias/69bf23fe84863_1774134270.jpg', '', '2026-03-21 23:04:30');
+(2, 4, 'uploads/referencias/69bf23fe84863_1774134270.jpg', '', '2026-03-21 23:04:30'),
+(3, 5, 'uploads/referencias/69c01e2eaf090_1774198318.jpg', '', '2026-03-22 16:51:59'),
+(4, 5, 'uploads/referencias/69c01e2eaf31c_1774198318.jpg', '', '2026-03-22 16:51:59'),
+(5, 6, 'uploads/referencias/69c04e4f93035_1774210639.jpg', '', '2026-03-22 20:17:18'),
+(6, 9, 'uploads/referencias/69c1cbbbd89bc_1774308283.jpg', '', '2026-03-23 23:24:44'),
+(7, 9, 'uploads/referencias/69c1cbbbd94f8_1774308283.jpg', '', '2026-03-23 23:24:44');
 
 -- --------------------------------------------------------
 
@@ -186,6 +222,13 @@ CREATE TABLE `entregas` (
   `observaciones` text DEFAULT NULL,
   `fecha_entrega` timestamp NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci;
+
+--
+-- Volcado de datos para la tabla `entregas`
+--
+
+INSERT INTO `entregas` (`id`, `pedido_id`, `usuario_id`, `lugar_entrega`, `es_envio`, `direccion_envio`, `costo_envio`, `total_cobrado`, `observaciones`, `fecha_entrega`) VALUES
+(1, 4, 1, 'TIENDA VIZENGO', 0, '', '0.00', '42.00', 'entregado en la tienda', '2026-03-22 21:47:26');
 
 -- --------------------------------------------------------
 
@@ -207,7 +250,13 @@ CREATE TABLE `historial_pedidos` (
 --
 
 INSERT INTO `historial_pedidos` (`id`, `pedido_id`, `usuario_id`, `accion`, `descripcion`, `fecha_accion`) VALUES
-(1, 4, 1, 'PEDIDO_CREADO', 'Pedido PED-2026-0001 creado', '2026-03-21 23:04:30');
+(1, 4, 1, 'PEDIDO_CREADO', 'Pedido PED-2026-0001 creado', '2026-03-21 23:04:30'),
+(2, 5, 1, 'PEDIDO_CREADO', 'Pedido PED-2026-0002 creado', '2026-03-22 16:51:59'),
+(3, 6, 1, 'PEDIDO_CREADO', 'Pedido PED-2026-0003 creado', '2026-03-22 20:17:18'),
+(4, 4, 1, 'PEDIDO_ENTREGADO', 'Pedido entregado al cliente leslie perez', '2026-03-22 21:47:26'),
+(5, 7, 1, 'PEDIDO_CREADO', 'Pedido PED-2026-0004 creado', '2026-03-23 13:56:11'),
+(6, 8, 1, 'PEDIDO_CREADO', 'Pedido PED-2026-0005 creado', '2026-03-23 22:27:55'),
+(7, 9, 1, 'PEDIDO_CREADO', 'Pedido PED-2026-0006 creado', '2026-03-23 23:24:44');
 
 -- --------------------------------------------------------
 
@@ -249,7 +298,25 @@ INSERT INTO `integrantes` (`id`, `pedido_id`, `nombre`, `talla`, `numero`, `obse
 (3, 4, 'leid', 'S', '8', '', 1, 'Dama'),
 (4, 4, 'alejdanra', 'L', '9', '', 1, 'Dama'),
 (5, 4, 'liskdwe', 'L', '7', '', 1, 'Varon'),
-(6, 4, 'waler', 'M', '96', '', 1, 'Varon');
+(6, 4, 'waler', 'M', '96', '', 1, 'Varon'),
+(7, 5, 'lila', '14', '4', 'arquera', 1, 'Dama'),
+(8, 5, 'loli', '12', '7', '', 1, 'Dama'),
+(9, 5, 'otoi', 'M', '8', '', 1, 'Varon'),
+(10, 5, 'uila', 'L', '9', '', 1, 'Dama'),
+(11, 5, 'osil', 'S', '87', '', 1, 'Varon'),
+(12, 5, 'ilio', 'M', '12', '', 1, 'Varon'),
+(13, 6, 'lin', 'S', '1', 'arquera', 1, 'Dama'),
+(14, 6, 'waren', 'M', '4', '', 1, 'Varon'),
+(15, 6, 'song', 'M', '9', 'talla ancha', 1, 'Dama'),
+(16, 6, 'leny', 'L', '98', '', 1, 'Dama'),
+(17, 7, 'pedro', 'M', '12', '', 1, 'Varon'),
+(18, 7, 'luis', 'M', '14', '', 1, 'Varon'),
+(19, 7, 'alberto', 'L', '15', '', 1, 'Varon'),
+(20, 7, 'luis a.', '14', '12', '', 1, 'Dama'),
+(21, 7, 'alberto j.', 'S', '14', '', 1, 'Varon'),
+(22, 7, 'alberto l.', 'L', '08', '', 1, 'Dama'),
+(23, 7, 'alberto  ñ.', 'M', '11', '', 1, 'Varon'),
+(24, 7, 'alberto k.', 'S', '12', '', 1, 'Varon');
 
 -- --------------------------------------------------------
 
@@ -278,7 +345,13 @@ CREATE TABLE `kits` (
 --
 
 INSERT INTO `kits` (`id`, `pedido_id`, `camiseta_tipo`, `camiseta_tela`, `camiseta_talla`, `short_tipo`, `short_tela`, `short_talla`, `medias_tipo`, `medias_detalles`, `cantidad`, `precio_unitario`, `subtotal`) VALUES
-(2, 4, 'CAMISETA MANGA CORTA', 'Tela: ESPIGA', 's, m, l', 'SHORT', 'Tela: MARATHON', 'S, M, L', 'NINGUNO', '', 6, '10.00', '60.00');
+(2, 4, 'CAMISETA MANGA CORTA', 'Tela: ESPIGA', 's, m, l', 'SHORT', 'Tela: MARATHON', 'S, M, L', 'NINGUNO', '', 6, '10.00', '60.00'),
+(3, 5, 'CAMISETA BASQUET', 'Tela: ALGODON', '12,14,16', 'SHORT', 'Tela: DRY', '12,14,16', 'NINGUNO', '', 4, '14.00', '56.00'),
+(4, 5, 'CAMISETA BASQUET', 'Tela: ALGODON', 'S,M,L', 'SHORT', 'Tela: DRY', 'S,M,L', 'NINGUNO', '', 2, '14.00', '28.00'),
+(5, 6, 'CAMISETA MANGA CORTA', 'Tela: ALGODON', 'S,M,L', 'SHORT', 'Tela: DRY', 'S,M,L', 'RODILLERA', 'COLOR VERDE', 4, '14.00', '56.00'),
+(6, 7, 'CAMISETA MANGA CORTA', 'Tela: ESPIGA', 's,m,l', 'SHORT', 'Tela: NOVA', 's,m,l', 'RODILLERA', '', 20, '55.00', '1100.00'),
+(7, 8, 'CAMISETA MANGA CORTA', 'Tela: ESPIGA', '-', 'SHORT', 'Tela: ESPIGA', '-', 'NINGUNO', '', 5, '35.00', '175.00'),
+(8, 9, 'POLO PUBLICITARIO', 'Tela: ALGODON', 'S,M,L', 'SHORT', 'Tela: FULL LICRA', 'S,M,L', 'NINGUNO', '', 4, '14.00', '56.00');
 
 -- --------------------------------------------------------
 
@@ -301,7 +374,11 @@ CREATE TABLE `merchandising` (
 --
 
 INSERT INTO `merchandising` (`id`, `pedido_id`, `articulo`, `cantidad`, `precio_unitario`, `es_regalo`, `especificaciones`) VALUES
-(2, 4, 'BANDEROLA', 1, '0.00', 1, '1.4 M X 8 M');
+(2, 4, 'BANDEROLA', 1, '0.00', 1, '1.4 M X 8 M'),
+(3, 5, 'BANDERA', 4, '2.00', 0, 'BANDERA PERUANA'),
+(4, 6, 'BANDEROLA', 1, '8.00', 0, 'FONDO VERDE OSCURO'),
+(5, 7, 'BANDEROLA', 1, '38.00', 0, ''),
+(6, 9, 'BANDEROLA', 1, '0.00', 1, 'FONDO VERDE CLARO');
 
 -- --------------------------------------------------------
 
@@ -342,7 +419,12 @@ CREATE TABLE `pedidos` (
 --
 
 INSERT INTO `pedidos` (`id`, `codigo`, `cliente_id`, `usuario_id`, `tipo_contrato`, `lugar_entrega`, `direccion_envio`, `vendedor_asignado`, `celular_cliente`, `observaciones_generales`, `observaciones_diseno`, `estado_contrato`, `estado_integrantes`, `estado_diseno`, `estado_planchado`, `estado_costura`, `estado_general`, `fecha_pedido`, `fecha_entrega`, `hora_entrega`, `fecha_limite`, `fecha_completado`, `subtotal`, `adelanto`, `saldo`) VALUES
-(4, 'PED-2026-0001', 8, 1, 'PEDIDO', 'TIENDA VIZENGO', '', 'Jhon', '996969695', 'directora de perene', 'LOGO A LA IZQUIERDA', 'completo', 'completo', 'pendiente', 'pendiente', 'pendiente', 'en_proceso', '2026-03-21 23:04:30', '2026-03-23', '20:04:00', NULL, NULL, '72.00', '30.00', '42.00');
+(4, 'PED-2026-0001', 8, 1, 'PEDIDO', 'TIENDA VIZENGO', '', 'Jhon', '996969695', 'directora de perene', 'LOGO A LA IZQUIERDA', 'completo', 'completo', 'completo', 'completo', 'completo', 'entregado', '2026-03-21 23:04:30', '2026-03-23', '20:04:00', NULL, '2026-03-22 21:47:26', '72.00', '30.00', '42.00'),
+(5, 'PED-2026-0002', 9, 1, 'PEDIDO', 'ENVÍO', 'agencia lobato', 'Jhon', '969696316', 'ejecutiva importante', 'LOGO A LA DERECHA BIEN BONITO', 'completo', 'completo', 'completo', 'pendiente', 'pendiente', 'en_proceso', '2026-03-22 16:51:59', '2026-03-25', '15:50:00', NULL, NULL, '92.00', '40.00', '52.00'),
+(6, 'PED-2026-0003', 10, 1, 'PEDIDO', 'TIENDA VIZENGO', '', 'Jhon', '969393697', 'institucion evez ser', 'TEXTO MOTIVACIONAL', 'completo', 'completo', 'completo', 'completo', 'pendiente', 'en_proceso', '2026-03-22 20:17:18', '2026-03-24', '18:16:00', NULL, NULL, '64.00', '20.00', '44.00'),
+(7, 'PED-2026-0004', 11, 1, 'PEDIDO', 'TIENDA VIZENGO', '', 'yohana', '126165456', 'amigo de betsy', '', 'completo', 'completo', 'pendiente', 'pendiente', 'pendiente', 'en_proceso', '2026-03-23 13:56:11', '2026-03-25', '14:26:00', NULL, NULL, '1138.00', '800.00', '338.00'),
+(8, 'PED-2026-0005', 2, 1, 'PEDIDO', 'TIENDA VIZENGO', '', 'yohana', '', '', '', 'completo', 'pendiente', 'pendiente', 'pendiente', 'pendiente', 'en_proceso', '2026-03-23 22:27:55', '2026-03-24', '16:24:00', NULL, NULL, '175.00', '10.00', '165.00'),
+(9, 'PED-2026-0006', 12, 1, 'PEDIDO', 'TIENDA VIZENGO', '', 'yohana', '969669301', 'clienta ejecutiva', 'LOGO A LA DERECHA', 'completo', 'pendiente', 'pendiente', 'pendiente', 'pendiente', 'en_proceso', '2026-03-23 23:24:44', '2026-03-26', '20:21:00', NULL, NULL, '72.00', '30.00', '42.00');
 
 -- --------------------------------------------------------
 
@@ -366,6 +448,14 @@ CREATE TABLE `planchado` (
   `fecha_planchado` date DEFAULT NULL,
   `fecha_registro` timestamp NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci;
+
+--
+-- Volcado de datos para la tabla `planchado`
+--
+
+INSERT INTO `planchado` (`id`, `pedido_id`, `planchador_id`, `planchador_nombre`, `cant_polos`, `cant_shorts`, `cant_cuellos`, `precio_polo`, `precio_short`, `precio_cuello`, `total_pago`, `observaciones`, `fecha_planchado`, `fecha_registro`) VALUES
+(1, 4, NULL, 'Miguel', 6, 6, 6, '2.00', '1.00', '0.50', '21.00', 'quiero planchado perfecto', '2026-03-22', '2026-03-22 20:37:59'),
+(2, 6, NULL, 'Carlos', 4, 4, 4, '1.50', '1.00', '0.50', '14.00', 'planchado en seco', '2026-03-22', '2026-03-22 21:07:44');
 
 -- --------------------------------------------------------
 
@@ -405,6 +495,13 @@ CREATE TABLE `planchado_merchandising` (
   `precio_unitario` decimal(10,2) DEFAULT 0.00
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci;
 
+--
+-- Volcado de datos para la tabla `planchado_merchandising`
+--
+
+INSERT INTO `planchado_merchandising` (`id`, `planchado_id`, `articulo`, `cantidad`, `precio_unitario`) VALUES
+(1, 2, 'Banderola', 1, '2.00');
+
 -- --------------------------------------------------------
 
 --
@@ -442,11 +539,11 @@ CREATE TABLE `usuarios` (
 --
 
 INSERT INTO `usuarios` (`id`, `username`, `password`, `nombre`, `celular`, `email`, `rol`, `activo`, `fecha_creacion`, `ultimo_acceso`) VALUES
-(1, 'jhon', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Jhon', '991122597', 'jhon@vizengo.com', 'vendedor', 1, '2026-03-21 17:05:47', '2026-03-22 14:36:45'),
-(2, 'karina', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Karina', '99898998', 'karina@vizengo.com', 'vendedor', 1, '2026-03-21 17:05:47', '2026-03-22 14:40:23'),
-(3, 'carolina', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Carolina', '999999', 'carolina@vizengo.com', 'disenador', 1, '2026-03-21 17:05:47', '2026-03-22 14:40:47'),
+(1, '71234567', '$2y$10$ZzbdBIDxaYdylOR8dBaIyeVeHZHSa6xPPpGO5KyYqVoiVY7Oo9HRi', 'yohana', '991122597', 'jhon@vizengo.com', 'vendedor', 1, '2026-03-21 17:05:47', '2026-03-24 00:03:01'),
+(3, 'carolina', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Carolina', '999999', 'carolina@vizengo.com', 'disenador', 1, '2026-03-21 17:05:47', '2026-03-22 21:42:51'),
 (4, 'erick', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Erick', '912366', 'erick@vizengo.com', 'disenador', 1, '2026-03-21 17:05:47', NULL),
-(5, 'admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Administrador', '99999999', 'admin@vizengo.com', 'administrador', 1, '2026-03-21 17:05:47', NULL);
+(5, 'admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Administrador', '99999999', 'admin@vizengo.com', 'administrador', 1, '2026-03-21 17:05:47', '2026-03-22 22:04:34'),
+(6, '74207930', '$2y$10$5BmJfp82nfZC.ruijt.ElevcaNC2a4rN.atgEQrBnEuPhIQXNMfy6', 'Andrea Marcos', '997379560', '', 'disenador', 1, '2026-03-22 21:58:35', '2026-03-23 22:53:54');
 
 --
 -- Índices para tablas volcadas
@@ -606,25 +703,25 @@ ALTER TABLE `usuarios`
 -- AUTO_INCREMENT de la tabla `adicionales_talla`
 --
 ALTER TABLE `adicionales_talla`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT de la tabla `clientes`
 --
 ALTER TABLE `clientes`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT de la tabla `costura`
 --
 ALTER TABLE `costura`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT de la tabla `costura_otros`
 --
 ALTER TABLE `costura_otros`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT de la tabla `costureros`
@@ -636,25 +733,25 @@ ALTER TABLE `costureros`
 -- AUTO_INCREMENT de la tabla `disenos_finales`
 --
 ALTER TABLE `disenos_finales`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT de la tabla `disenos_iniciales`
 --
 ALTER TABLE `disenos_iniciales`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT de la tabla `entregas`
 --
 ALTER TABLE `entregas`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT de la tabla `historial_pedidos`
 --
 ALTER TABLE `historial_pedidos`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT de la tabla `imagenes_integrantes`
@@ -666,31 +763,31 @@ ALTER TABLE `imagenes_integrantes`
 -- AUTO_INCREMENT de la tabla `integrantes`
 --
 ALTER TABLE `integrantes`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
 
 --
 -- AUTO_INCREMENT de la tabla `kits`
 --
 ALTER TABLE `kits`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT de la tabla `merchandising`
 --
 ALTER TABLE `merchandising`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT de la tabla `pedidos`
 --
 ALTER TABLE `pedidos`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT de la tabla `planchado`
 --
 ALTER TABLE `planchado`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT de la tabla `planchadores`
@@ -702,7 +799,7 @@ ALTER TABLE `planchadores`
 -- AUTO_INCREMENT de la tabla `planchado_merchandising`
 --
 ALTER TABLE `planchado_merchandising`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT de la tabla `referencias_pedido`
@@ -714,7 +811,7 @@ ALTER TABLE `referencias_pedido`
 -- AUTO_INCREMENT de la tabla `usuarios`
 --
 ALTER TABLE `usuarios`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- Restricciones para tablas volcadas
