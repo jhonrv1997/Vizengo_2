@@ -198,6 +198,8 @@ $fechaHoy = str_replace(array_keys($meses), array_values($meses), $fechaHoy);
             <div class="pipeline-col-head">Contrato</div>
             <div class="pipeline-col-head">Diseño</div>
             <div class="pipeline-col-head">Planchado</div>
+            <div class="pipeline-col-head">Costura</div>
+            <div class="pipeline-col-head">Estado General</div>
             <div class="pipeline-col-head">Acciones</div>
         </div>
 
@@ -224,6 +226,42 @@ $fechaHoy = str_replace(array_keys($meses), array_values($meses), $fechaHoy);
             <div>
                 <span class="status-badge badge-<?php echo $pedido['estado_planchado'] === 'completo' ? 'completo' : 'pendiente'; ?>">
                     <span class="dot"></span><?php echo $pedido['estado_planchado'] === 'completo' ? 'Completo' : 'Pendiente'; ?>
+                </span>
+            </div>
+            <div>
+                <span class="status-badge badge-<?php echo $pedido['estado_costura'] === 'completo' ? 'completo' : 'pendiente'; ?>">
+                    <span class="dot"></span><?php echo $pedido['estado_costura'] === 'completo' ? 'Completo' : 'Pendiente'; ?>
+                </span>
+            </div>
+            <div>
+                <?php
+                $estadoGeneral = $pedido['estado_general'];
+                $badgeClass = '';
+                $estadoTexto = '';
+                switch($estadoGeneral) {
+                    case 'en_proceso':
+                        $badgeClass = 'pendiente';
+                        $estadoTexto = 'En Proceso';
+                        break;
+                    case 'listo_entrega':
+                        $badgeClass = 'completo';
+                        $estadoTexto = 'Listo Entrega';
+                        break;
+                    case 'entregado':
+                        $badgeClass = 'completo';
+                        $estadoTexto = 'Entregado';
+                        break;
+                    case 'cancelado':
+                        $badgeClass = 'pendiente';
+                        $estadoTexto = 'Cancelado';
+                        break;
+                    default:
+                        $badgeClass = 'pendiente';
+                        $estadoTexto = 'En Proceso';
+                }
+                ?>
+                <span class="status-badge badge-<?php echo $badgeClass; ?>">
+                    <span class="dot"></span><?php echo $estadoTexto; ?>
                 </span>
             </div>
             <div>
