@@ -90,9 +90,9 @@ class BoletaPDF extends FPDF {
     
     function Header() {
         // Logo o nombre de empresa
-        $this->SetFont('Helvetica', 'B', 24);
-        $this->SetTextColor(43, 79, 255); // Color primario
-        $this->Cell(0, 12, txt('VIZENGO'), 0, 1, 'C');
+       // $this->SetFont('Helvetica', 'B', 24);
+       // $this->SetTextColor(43, 79, 255); // Color primario
+      //  $this->Cell(0, 12, txt('VIZENGO'), 0, 1, 'C');
         
         $this->SetFont('Helvetica', '', 10);
         $this->SetTextColor(100, 100, 100);
@@ -110,7 +110,7 @@ class BoletaPDF extends FPDF {
         // Titulo del documento
         $this->SetFont('Helvetica', 'B', 16);
         $this->SetTextColor(30, 30, 30);
-        $this->Cell(0, 10, txt('BOLETA DE VENTA'), 0, 1, 'C');
+        $this->Cell(0, 10, txt('CONTRATO DE VENTA'), 0, 1, 'C');
         
         $this->SetFont('Helvetica', '', 11);
         $this->SetTextColor(80, 80, 80);
@@ -224,9 +224,9 @@ $pdf->SetFont('Helvetica', 'B', 8);
 
 // Anchos de columna: Cantidad(15), Descripcion(95), P.Unit(25), Subtotal(25)
 $pdf->Cell(15, 7, txt('Cant.'), 1, 0, 'C', true);
-$pdf->Cell(95, 7, txt('Descripcion'), 1, 0, 'C', true);
-$pdf->Cell(25, 7, txt('P. Unit.'), 1, 0, 'C', true);
-$pdf->Cell(25, 7, txt('Subtotal'), 1, 1, 'C', true);
+$pdf->Cell(120, 7, txt('Descripcion'), 1, 0, 'C', true);
+$pdf->Cell(20, 7, txt('P. Unit.'), 1, 0, 'C', true);
+$pdf->Cell(20, 7, txt('Subtotal'), 1, 1, 'C', true);
 
 $pdf->SetFont('Helvetica', '', 8);
 $pdf->SetTextColor(30, 30, 30);
@@ -254,9 +254,9 @@ if (!empty($kits)) {
         $subtotal = $kit['cantidad'] * $kit['precio_unitario'];
         
         $pdf->Cell(15, 6, $kit['cantidad'], 1, 0, 'C');
-        $pdf->Cell(95, 6, txt(substr($descripcion, 0, 70)), 1, 0, 'L');
-        $pdf->Cell(25, 6, formatoMoneda($kit['precio_unitario']), 1, 0, 'R');
-        $pdf->Cell(25, 6, formatoMoneda($subtotal), 1, 1, 'R');
+        $pdf->Cell(120, 6, txt(substr($descripcion, 0, 70)), 1, 0, 'L');
+        $pdf->Cell(20, 6, formatoMoneda($kit['precio_unitario']), 1, 0, 'R');
+        $pdf->Cell(20, 6, formatoMoneda($subtotal), 1, 1, 'R');
     }
 }
 
@@ -267,9 +267,9 @@ if (!empty($adicionalesTalla)) {
         $subtotal = $adicional['cantidad'] * $adicional['precio_unitario'];
         
         $pdf->Cell(15, 6, $adicional['cantidad'], 1, 0, 'C');
-        $pdf->Cell(95, 6, txt($descripcion), 1, 0, 'L');
-        $pdf->Cell(25, 6, formatoMoneda($adicional['precio_unitario']), 1, 0, 'R');
-        $pdf->Cell(25, 6, formatoMoneda($subtotal), 1, 1, 'R');
+        $pdf->Cell(120, 6, txt($descripcion), 1, 0, 'L');
+        $pdf->Cell(20, 6, formatoMoneda($adicional['precio_unitario']), 1, 0, 'R');
+        $pdf->Cell(20, 6, formatoMoneda($subtotal), 1, 1, 'R');
     }
 }
 
@@ -288,9 +288,9 @@ if (!empty($merchandising)) {
         $subtotal = $merch['cantidad'] * $precioUnit;
         
         $pdf->Cell(15, 6, $merch['cantidad'], 1, 0, 'C');
-        $pdf->Cell(95, 6, txt(substr($descripcion, 0, 70)), 1, 0, 'L');
-        $pdf->Cell(25, 6, $merch['es_regalo'] ? txt('REGALO') : formatoMoneda($precioUnit), 1, 0, 'R');
-        $pdf->Cell(25, 6, formatoMoneda($subtotal), 1, 1, 'R');
+        $pdf->Cell(120, 6, txt(substr($descripcion, 0, 70)), 1, 0, 'L');
+        $pdf->Cell(20, 6, $merch['es_regalo'] ? txt('REGALO') : formatoMoneda($precioUnit), 1, 0, 'R');
+        $pdf->Cell(20, 6, formatoMoneda($subtotal), 1, 1, 'R');
     }
 }
 
@@ -371,6 +371,6 @@ $pdf->Cell(70, 5, '', 0, 0);
 $pdf->Cell(60, 5, txt('Firma del Vendedor'), 0, 1, 'C');
 
 // Generar el PDF
-$filename = 'Boleta_' . $pedido['codigo'] . '_' . date('Ymd_His') . '.pdf';
+$filename = 'Contrato_' . $pedido['codigo'] . '_' . date('Ymd_His') . '.pdf';
 $pdf->Output('D', $filename);
 ?>
