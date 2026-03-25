@@ -215,6 +215,17 @@ function renderEtapaContrato($pedidoId, $db) {
         </div>
     </div>
 
+    <!-- Botón Generar PDF -->
+    <div style="margin-top: 20px; text-align: center;">
+        <a href="api/generar-boleta-pdf.php?pedido_id=<?php echo $pedidoId; ?>" 
+           target="_blank"
+           class="btn btn-primary"
+           style="background: linear-gradient(135deg, var(--primary), #4a6cf7); border: none; padding: 12px 30px; font-weight: 600; border-radius: 8px; color: white; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(43, 79, 255, 0.3); transition: all 0.3s ease;">
+            <i class="fas fa-file-pdf"></i>
+            Generar Boleta PDF
+        </a>
+    </div>
+
     <!-- Diseños iniciales (referencias) -->
     <h6 style="font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--primary); margin-top:24px; margin-bottom:12px;">
         <i class="fas fa-images" style="margin-right:6px;"></i>Diseños de Referencia
