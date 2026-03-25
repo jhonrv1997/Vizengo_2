@@ -222,7 +222,7 @@ function renderEtapaContrato($pedidoId, $db) {
            class="btn btn-primary"
            style="background: linear-gradient(135deg, var(--primary), #4a6cf7); border: none; padding: 12px 30px; font-weight: 600; border-radius: 8px; color: white; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(43, 79, 255, 0.3); transition: all 0.3s ease;">
             <i class="fas fa-file-pdf"></i>
-            Generar Boleta PDF
+            Generar Contrato PDF
         </a>
     </div>
 
