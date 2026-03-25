@@ -45,10 +45,10 @@ if (!$pedido) {
     exit('Pedido no encontrado');
 }
 
-// Obtener diseños iniciales (referencias)
-$stmt = $db->prepare("SELECT imagen_path FROM disenos_iniciales WHERE pedido_id = ? ORDER BY id ASC LIMIT 1");
+// Obtener diseños iniciales (referencias) - obtener todas las imágenes
+$stmt = $db->prepare("SELECT imagen_path FROM disenos_iniciales WHERE pedido_id = ? ORDER BY id ASC");
 $stmt->execute([$pedidoId]);
-$disenoInicial = $stmt->fetch();
+$disenosIniciales = $stmt->fetchAll();
 
 // Obtener kits
 $stmt = $db->prepare("SELECT camiseta_tipo, camiseta_tela, camiseta_talla, 
@@ -168,21 +168,44 @@ foreach ($clientInfo as $info) {
 $pdf->Ln(8);
 
 // =====================================================
-// IMAGEN DE REFERENCIA (si existe)
+// IMAGENES DE REFERENCIA (si existen)
 // =====================================================
-if ($disenoInicial && !empty($disenoInicial['imagen_path'])) {
-    $imagenPath = __DIR__ . '/../' . $disenoInicial['imagen_path'];
-    if (file_exists($imagenPath)) {
-        $pdf->SetFont('Helvetica', 'B', 11);
-        $pdf->SetFillColor(43, 79, 255);
-        $pdf->SetTextColor(255, 255, 255);
-        $pdf->Cell(0, 8, '  ' . txt('IMAGEN DE REFERENCIA'), 0, 1, 'L', true);
-        $pdf->Ln(3);
-        
-        // Mostrar imagen centrada y pequena
-        $pdf->Image($imagenPath, 75, $pdf->GetY(), 60, 0, '', '', 'C');
-        $pdf->Ln(45);
+if (!empty($disenosIniciales)) {
+    $pdf->SetFont('Helvetica', 'B', 11);
+    $pdf->SetFillColor(43, 79, 255);
+    $pdf->SetTextColor(255, 255, 255);
+    $pdf->Cell(0, 8, '  ' . txt('IMAGENES DE REFERENCIA'), 0, 1, 'L', true);
+    $pdf->Ln(5);
+    
+    $pdf->SetTextColor(30, 30, 30);
+    
+    // Calcular espacio disponible y dimensiones de imagen
+    $imagenAncho = 50;  // Ancho fijo para cada imagen
+    $imagenAlto = 50;   // Alto fijo para cada imagen
+    $margenEntreImagenes = 10;
+    $totalImagenes = count($disenosIniciales);
+    
+    // Calcular posición X inicial para centrar las imágenes
+    $anchoTotalImagenes = ($totalImagenes * $imagenAncho) + (($totalImagenes - 1) * $margenEntreImagenes);
+    $posXInicial = (210 - $anchoTotalImagenes) / 2; // 210 es el ancho de página A4
+    
+    // Posición Y antes de colocar las imágenes
+    $posY = $pdf->GetY();
+    
+    $posX = $posXInicial;
+    foreach ($disenosIniciales as $diseno) {
+        if (!empty($diseno['imagen_path'])) {
+            $imagenPath = __DIR__ . '/../' . $diseno['imagen_path'];
+            if (file_exists($imagenPath)) {
+                // Colocar imagen en posición específica
+                $pdf->Image($imagenPath, $posX, $posY, $imagenAncho, $imagenAlto);
+                $posX += $imagenAncho + $margenEntreImagenes;
+            }
+        }
     }
+    
+    // Mover el cursor Y después de las imágenes (importante: usar SetY para saltar el espacio de las imágenes)
+    $pdf->SetY($posY + $imagenAlto + 10);
 }
 
 // =====================================================
