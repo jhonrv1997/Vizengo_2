@@ -355,6 +355,17 @@ function renderEtapaIntegrantes($pedidoId, $db) {
     ?>
     
     <?php if (!empty($integrantes)): ?>
+    <!-- Botón Generar PDF de Integrantes -->
+    <div style="margin-top: 16px; margin-bottom: 16px; text-align: center;">
+        <a href="api/generar-pdf-integrantes.php?pedido_id=<?php echo $pedidoId; ?>" 
+           target="_blank"
+           class="btn btn-primary"
+           style="background: linear-gradient(135deg, var(--primary), #4a6cf7); border: none; padding: 12px 30px; font-weight: 600; border-radius: 8px; color: white; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(43, 79, 255, 0.3); transition: all 0.3s ease;">
+            <i class="fas fa-file-pdf"></i>
+            Generar PDF de Integrantes
+        </a>
+    </div>
+    
     <table class="data-table">
         <thead>
             <tr>
