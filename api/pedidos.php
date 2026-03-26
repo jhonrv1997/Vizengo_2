@@ -5,7 +5,7 @@
  */
 
 require_once __DIR__ . '/../config.php';
-require_once __DIR__ . '/auth.php';
+require_once __DIR__ . 'auth.php';
 startSecureSession();
 setCorsHeaders();
 
@@ -984,7 +984,25 @@ function handleModificar() {
     requireRole(['vendedor', 'administrador']);
     
     $subAction = $_GET['sub'] ?? '';
-    $input = json_decode(file_get_contents('php://input'), true);
+    
+    // Mejorar manejo del input JSON con fallback a POST
+    $rawInput = file_get_contents('php://input');
+    $input = json_decode($rawInput, true);
+    
+    // Si JSON falla, intentar con POST
+    if ($input === null && !empty($_POST)) {
+        $input = $_POST;
+    }
+    
+    // Debug: Log del input recibido si está en modo desarrollo
+    if (DEV_MODE && $input === null) {
+        error_log("handleModificar - Input JSON nulo. Raw input: " . $rawInput);
+    }
+    
+    // Validar que el input no esté vacío
+    if ($input === null) {
+        errorResponse('No se recibieron datos válidos. Verifique el formato JSON.');
+    }
     
     switch ($subAction) {
         case 'kit':
@@ -1003,7 +1021,7 @@ function handleModificar() {
             modificarDatosGenerales($input);
             break;
         default:
-            errorResponse('Sub-acción de modificación no válida');
+            errorResponse('Sub-acción de modificación no válida: ' . $subAction);
     }
 }
 
@@ -1619,13 +1637,30 @@ function modificarMerchandising($input) {
 function modificarAdicional($input) {
     global $user;
     
+    // Debug: Log del input recibido
+    if (DEV_MODE) {
+        error_log("modificarAdicional - Input recibido: " . json_encode($input));
+    }
+    
     $pedidoId = intval($input['pedido_id'] ?? 0);
     $adicionalId = intval($input['adicional_id'] ?? 0);
     $accion = sanitize($input['accion'] ?? '');
     $motivo = sanitize($input['motivo'] ?? '');
     
+    // Validar que el pedido_id sea válido
     if ($pedidoId <= 0) {
-        errorResponse('ID de pedido no válido');
+        errorResponse('ID de pedido no válido. Recibido: ' . ($input['pedido_id'] ?? 'null'));
+    }
+    
+    // Validar que la acción no esté vacía
+    if (empty($accion)) {
+        errorResponse('La acción es requerida. Valores permitidos: agregar, modificar, eliminar');
+    }
+    
+    // Validar que la acción sea válida
+    $accionesValidas = ['agregar', 'modificar', 'eliminar'];
+    if (!in_array($accion, $accionesValidas)) {
+        errorResponse('Acción no válida para adicional. Valores permitidos: ' . implode(', ', $accionesValidas) . '. Recibido: ' . $accion);
     }
     
     validarPedidoModificable($pedidoId);
