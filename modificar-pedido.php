@@ -963,55 +963,94 @@ function getDatosGeneralesForm() {
 }
 
 async function guardarCambios() {
+    // Validar que las variables globales estén definidas
+    if (typeof pedidoId === 'undefined' || !pedidoId) {
+        alert('Error: No se pudo obtener el ID del pedido. Recargue la página.');
+        return;
+    }
+    
+    if (!currentType) {
+        alert('Error: No se pudo determinar el tipo de modificación.');
+        return;
+    }
+    
+    if (!currentAction) {
+        alert('Error: No se pudo determinar la acción a realizar.');
+        return;
+    }
+    
     let data = {
         pedido_id: pedidoId,
         accion: currentAction
     };
     
-    switch(currentType) {
-        case 'kit':
-            data.camiseta_tipo = document.getElementById('kitCamisetaTipo').value;
-            data.cantidad = parseInt(document.getElementById('kitCantidad').value);
-            data.precio_unitario = parseFloat(document.getElementById('kitPrecio').value);
-            data.motivo = document.getElementById('kitMotivo').value;
-            if (currentAction === 'modificar') data.kit_id = currentId;
-            break;
-        case 'integrante':
-            data.nombre = document.getElementById('intNombre').value;
-            data.talla = document.getElementById('intTalla').value;
-            data.numero = document.getElementById('intNumero').value;
-            data.sexo = document.getElementById('intSexo').value;
-            data.motivo = document.getElementById('intMotivo').value;
-            if (currentAction === 'modificar') data.integrante_id = currentId;
-            break;
-        case 'merchandising':
-            data.articulo = document.getElementById('merchArticulo').value;
-            data.cantidad = parseInt(document.getElementById('merchCantidad').value);
-            data.precio_unitario = parseFloat(document.getElementById('merchPrecio').value);
-            data.es_regalo = document.getElementById('merchRegalo').checked ? 1 : 0;
-            data.motivo = document.getElementById('merchMotivo').value;
-            if (currentAction === 'modificar') data.merchandising_id = currentId;
-            break;
-        case 'adicional':
-            data.talla = document.getElementById('adicTalla').value;
-            data.cantidad = parseInt(document.getElementById('adicCantidad').value);
-            data.precio_unitario = parseFloat(document.getElementById('adicPrecio').value);
-            data.motivo = document.getElementById('adicMotivo').value;
-            if (currentAction === 'modificar') data.adicional_id = currentId;
-            break;
-        case 'datos_generales':
-            data.adelanto = parseFloat(document.getElementById('datosAdelanto').value);
-            data.motivo = document.getElementById('datosMotivo').value;
-            break;
-    }
-    
     try {
+        switch(currentType) {
+            case 'kit':
+                data.camiseta_tipo = document.getElementById('kitCamisetaTipo').value;
+                data.cantidad = parseInt(document.getElementById('kitCantidad').value) || 1;
+                data.precio_unitario = parseFloat(document.getElementById('kitPrecio').value) || 0;
+                data.motivo = document.getElementById('kitMotivo').value || '';
+                if (currentAction === 'modificar') data.kit_id = currentId;
+                break;
+            case 'integrante':
+                data.nombre = document.getElementById('intNombre').value || '';
+                data.talla = document.getElementById('intTalla').value || '';
+                data.numero = document.getElementById('intNumero').value || '';
+                data.sexo = document.getElementById('intSexo').value || 'Varon';
+                data.motivo = document.getElementById('intMotivo').value || '';
+                if (currentAction === 'modificar') data.integrante_id = currentId;
+                break;
+            case 'merchandising':
+                data.articulo = document.getElementById('merchArticulo').value || '';
+                data.cantidad = parseInt(document.getElementById('merchCantidad').value) || 1;
+                data.precio_unitario = parseFloat(document.getElementById('merchPrecio').value) || 0;
+                data.es_regalo = document.getElementById('merchRegalo').checked ? 1 : 0;
+                data.motivo = document.getElementById('merchMotivo').value || '';
+                if (currentAction === 'modificar') data.merchandising_id = currentId;
+                break;
+            case 'adicional':
+                data.talla = document.getElementById('adicTalla').value || '';
+                data.cantidad = parseInt(document.getElementById('adicCantidad').value) || 1;
+                data.precio_unitario = parseFloat(document.getElementById('adicPrecio').value) || 0;
+                data.motivo = document.getElementById('adicMotivo').value || '';
+                if (currentAction === 'modificar') data.adicional_id = currentId;
+                break;
+            case 'datos_generales':
+                data.adelanto = parseFloat(document.getElementById('datosAdelanto').value) || 0;
+                data.motivo = document.getElementById('datosMotivo').value || '';
+                break;
+            default:
+                alert('Tipo de modificación no reconocido: ' + currentType);
+                return;
+        }
+        
+        // Debug: Mostrar datos que se enviarán (descomentar para debug)
+        console.log('Enviando datos:', data);
+        
         const endpoint = currentType === 'datos_generales' ? 'datos_generales' : currentType;
-        const response = await fetch(`api/pedidos.php?action=modificar&sub=${endpoint}`, {
+        const url = `api/pedidos.php?action=modificar&sub=${endpoint}`;
+        
+        console.log('URL de petición:', url);
+        
+        const response = await fetch(url, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(data)
         });
+        
+        // Verificar si la respuesta HTTP es válida
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Error HTTP:', response.status, errorText);
+            try {
+                const errorJson = JSON.parse(errorText);
+                alert(errorJson.error || `Error del servidor (${response.status})`);
+            } catch (e) {
+                alert(`Error del servidor (${response.status}): ${errorText}`);
+            }
+            return;
+        }
         
         const result = await response.json();
         
@@ -1022,6 +1061,7 @@ async function guardarCambios() {
             alert(result.error || 'Error al guardar los cambios');
         }
     } catch (error) {
+        console.error('Error en guardarCambios:', error);
         alert('Error de conexión: ' + error.message);
     }
 }
