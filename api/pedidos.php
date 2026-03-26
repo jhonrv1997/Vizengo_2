@@ -56,6 +56,15 @@ try {
         case 'entrega':
             handleEntrega();
             break;
+        case 'modificar':
+            handleModificar();
+            break;
+        case 'historial_modificaciones':
+            getHistorialModificaciones();
+            break;
+        case 'verificar_modificable':
+            verificarPedidoModificable();
+            break;
         default:
             errorResponse('Acción no válida', 400);
     }
@@ -957,6 +966,927 @@ function registrarEntrega($input) {
         $db->rollBack();
         throw $e;
     }
+}
+
+/**
+ * =====================================================
+ * MODIFICACIÓN DE PEDIDOS
+ * Solo vendedor y administrador pueden modificar
+ * Solo si el pedido no está en etapa planchado
+ * =====================================================
+ */
+
+/**
+ * Manejar solicitudes de modificación
+ */
+function handleModificar() {
+    global $user;
+    requireRole(['vendedor', 'administrador']);
+    
+    $subAction = $_GET['sub'] ?? '';
+    $input = json_decode(file_get_contents('php://input'), true);
+    
+    switch ($subAction) {
+        case 'kit':
+            modificarKit($input);
+            break;
+        case 'integrante':
+            modificarIntegrante($input);
+            break;
+        case 'merchandising':
+            modificarMerchandising($input);
+            break;
+        case 'adicional':
+            modificarAdicional($input);
+            break;
+        case 'datos_generales':
+            modificarDatosGenerales($input);
+            break;
+        default:
+            errorResponse('Sub-acción de modificación no válida');
+    }
+}
+
+/**
+ * Verificar si un pedido puede ser modificado
+ */
+function verificarPedidoModificable() {
+    $pedidoId = intval($_GET['pedido_id'] ?? 0);
+    if ($pedidoId <= 0) {
+        errorResponse('ID de pedido no válido');
+    }
+    
+    $db = getDB();
+    $stmt = $db->prepare("SELECT id, codigo, estado_planchado, estado_general FROM pedidos WHERE id = ?");
+    $stmt->execute([$pedidoId]);
+    $pedido = $stmt->fetch();
+    
+    if (!$pedido) {
+        errorResponse('Pedido no encontrado', 404);
+    }
+    
+    $modificable = $pedido['estado_planchado'] !== 'completo' && $pedido['estado_general'] !== 'entregado';
+    
+    successResponse([
+        'modificable' => $modificable,
+        'motivo' => $modificable ? 'El pedido puede ser modificado' : 'El pedido ya pasó la etapa de planchado o fue entregado',
+        'pedido' => $pedido
+    ]);
+}
+
+/**
+ * Función helper para validar que el pedido es modificable
+ */
+function validarPedidoModificable($pedidoId) {
+    $db = getDB();
+    $stmt = $db->prepare("SELECT estado_planchado, estado_general FROM pedidos WHERE id = ?");
+    $stmt->execute([$pedidoId]);
+    $pedido = $stmt->fetch();
+    
+    if (!$pedido) {
+        throw new Exception('Pedido no encontrado');
+    }
+    
+    if ($pedido['estado_planchado'] === 'completo') {
+        throw new Exception('No se puede modificar el pedido porque ya está en etapa de planchado completado');
+    }
+    
+    if ($pedido['estado_general'] === 'entregado') {
+        throw new Exception('No se puede modificar un pedido que ya fue entregado');
+    }
+    
+    return true;
+}
+
+/**
+ * Registrar modificación en el historial
+ */
+function registrarModificacion($pedidoId, $tipoModificacion, $tablaAfectada, $registroId, 
+                                $campoModificado, $valorAnterior, $valorNuevo,
+                                $cantidadAnterior = null, $cantidadNueva = null,
+                                $precioAnterior = null, $precioNuevo = null,
+                                $motivo = '') {
+    global $user;
+    $db = getDB();
+    
+    // Obtener subtotales actuales
+    $stmt = $db->prepare("SELECT subtotal FROM pedidos WHERE id = ?");
+    $stmt->execute([$pedidoId]);
+    $pedido = $stmt->fetch();
+    
+    $stmt = $db->prepare("INSERT INTO modificaciones_pedido (
+        pedido_id, usuario_id, tipo_modificacion, tabla_afectada, registro_id,
+        campo_modificado, valor_anterior, valor_nuevo,
+        cantidad_anterior, cantidad_nueva, precio_anterior, precio_nuevo,
+        subtotal_anterior, subtotal_nuevo, motivo
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    
+    // Calcular nuevo subtotal después de la modificación
+    $nuevoSubtotal = $pedido['subtotal'];
+    
+    $stmt->execute([
+        $pedidoId,
+        $user['id'],
+        $tipoModificacion,
+        $tablaAfectada,
+        $registroId,
+        $campoModificado,
+        $valorAnterior,
+        $valorNuevo,
+        $cantidadAnterior,
+        $cantidadNueva,
+        $precioAnterior,
+        $precioNuevo,
+        $pedido['subtotal'],
+        $nuevoSubtotal,
+        $motivo
+    ]);
+    
+    return $db->lastInsertId();
+}
+
+/**
+ * Modificar kit del pedido
+ */
+function modificarKit($input) {
+    global $user;
+    
+    $pedidoId = intval($input['pedido_id'] ?? 0);
+    $kitId = intval($input['kit_id'] ?? 0);
+    $accion = sanitize($input['accion'] ?? ''); // 'agregar', 'modificar', 'eliminar'
+    $motivo = sanitize($input['motivo'] ?? '');
+    
+    if ($pedidoId <= 0) {
+        errorResponse('ID de pedido no válido');
+    }
+    
+    validarPedidoModificable($pedidoId);
+    
+    $db = getDB();
+    $db->beginTransaction();
+    
+    try {
+        // Obtener subtotal actual
+        $stmt = $db->prepare("SELECT subtotal FROM pedidos WHERE id = ?");
+        $stmt->execute([$pedidoId]);
+        $pedido = $stmt->fetch();
+        $subtotalAnterior = floatval($pedido['subtotal']);
+        
+        switch ($accion) {
+            case 'agregar':
+                // Insertar nuevo kit
+                $stmt = $db->prepare("INSERT INTO kits (
+                    pedido_id, camiseta_tipo, camiseta_tela, camiseta_talla,
+                    short_tipo, short_tela, short_talla, medias_tipo, medias_detalles,
+                    cantidad, precio_unitario, subtotal
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                
+                $cantidad = intval($input['cantidad'] ?? 1);
+                $precioUnitario = floatval($input['precio_unitario'] ?? 0);
+                $subtotalKit = $cantidad * $precioUnitario;
+                
+                $stmt->execute([
+                    $pedidoId,
+                    sanitize($input['camiseta_tipo'] ?? ''),
+                    sanitize($input['camiseta_tela'] ?? ''),
+                    sanitize($input['camiseta_talla'] ?? ''),
+                    sanitize($input['short_tipo'] ?? ''),
+                    sanitize($input['short_tela'] ?? ''),
+                    sanitize($input['short_talla'] ?? ''),
+                    sanitize($input['medias_tipo'] ?? ''),
+                    sanitize($input['medias_detalles'] ?? ''),
+                    $cantidad,
+                    $precioUnitario,
+                    $subtotalKit
+                ]);
+                
+                $nuevoKitId = $db->lastInsertId();
+                $nuevoSubtotal = $subtotalAnterior + $subtotalKit;
+                
+                // Actualizar subtotal del pedido
+                $stmt = $db->prepare("UPDATE pedidos SET subtotal = ?, saldo = subtotal - adelanto WHERE id = ?");
+                $stmt->execute([$nuevoSubtotal, $pedidoId]);
+                
+                // Registrar modificación
+                registrarModificacion(
+                    $pedidoId, 'ADICION', 'kits', $nuevoKitId,
+                    'nuevo_kit', '', $input['camiseta_tipo'] ?? 'Kit',
+                    0, $cantidad,
+                    0, $precioUnitario,
+                    $motivo
+                );
+                
+                // Actualizar subtotal en el registro de modificación
+                $modId = $db->lastInsertId();
+                $stmt = $db->prepare("UPDATE modificaciones_pedido SET subtotal_nuevo = ? WHERE id = ?");
+                $stmt->execute([$nuevoSubtotal, $modId]);
+                
+                break;
+                
+            case 'modificar':
+                if ($kitId <= 0) {
+                    throw new Exception('ID de kit no válido');
+                }
+                
+                // Obtener datos actuales del kit
+                $stmt = $db->prepare("SELECT * FROM kits WHERE id = ? AND pedido_id = ?");
+                $stmt->execute([$kitId, $pedidoId]);
+                $kitActual = $stmt->fetch();
+                
+                if (!$kitActual) {
+                    throw new Exception('Kit no encontrado');
+                }
+                
+                $cantidadAnterior = intval($kitActual['cantidad']);
+                $precioAnterior = floatval($kitActual['precio_unitario']);
+                $subtotalKitAnterior = floatval($kitActual['subtotal']);
+                
+                $nuevaCantidad = intval($input['cantidad'] ?? $cantidadAnterior);
+                $nuevoPrecio = floatval($input['precio_unitario'] ?? $precioAnterior);
+                $nuevoSubtotalKit = $nuevaCantidad * $nuevoPrecio;
+                
+                // Actualizar kit
+                $stmt = $db->prepare("UPDATE kits SET 
+                    camiseta_tipo = ?, camiseta_tela = ?, camiseta_talla = ?,
+                    short_tipo = ?, short_tela = ?, short_talla = ?,
+                    medias_tipo = ?, medias_detalles = ?,
+                    cantidad = ?, precio_unitario = ?, subtotal = ?
+                    WHERE id = ?");
+                
+                $stmt->execute([
+                    sanitize($input['camiseta_tipo'] ?? $kitActual['camiseta_tipo']),
+                    sanitize($input['camiseta_tela'] ?? $kitActual['camiseta_tela']),
+                    sanitize($input['camiseta_talla'] ?? $kitActual['camiseta_talla']),
+                    sanitize($input['short_tipo'] ?? $kitActual['short_tipo']),
+                    sanitize($input['short_tela'] ?? $kitActual['short_tela']),
+                    sanitize($input['short_talla'] ?? $kitActual['short_talla']),
+                    sanitize($input['medias_tipo'] ?? $kitActual['medias_tipo']),
+                    sanitize($input['medias_detalles'] ?? $kitActual['medias_detalles']),
+                    $nuevaCantidad,
+                    $nuevoPrecio,
+                    $nuevoSubtotalKit,
+                    $kitId
+                ]);
+                
+                // Calcular diferencia y actualizar subtotal
+                $diferencia = $nuevoSubtotalKit - $subtotalKitAnterior;
+                $nuevoSubtotal = $subtotalAnterior + $diferencia;
+                
+                $stmt = $db->prepare("UPDATE pedidos SET subtotal = ?, saldo = subtotal - adelanto WHERE id = ?");
+                $stmt->execute([$nuevoSubtotal, $pedidoId]);
+                
+                // Determinar tipo de modificación
+                $tipoMod = $nuevaCantidad > $cantidadAnterior ? 'ADICION' : 
+                          ($nuevaCantidad < $cantidadAnterior ? 'DISMINUCION' : 'CAMBIO');
+                
+                // Registrar modificación
+                registrarModificacion(
+                    $pedidoId, $tipoMod, 'kits', $kitId,
+                    'cantidad_precio', 
+                    "Cantidad: {$cantidadAnterior}, Precio: {$precioAnterior}",
+                    "Cantidad: {$nuevaCantidad}, Precio: {$nuevoPrecio}",
+                    $cantidadAnterior, $nuevaCantidad,
+                    $precioAnterior, $nuevoPrecio,
+                    $motivo
+                );
+                
+                $modId = $db->lastInsertId();
+                $stmt = $db->prepare("UPDATE modificaciones_pedido SET subtotal_nuevo = ? WHERE id = ?");
+                $stmt->execute([$nuevoSubtotal, $modId]);
+                
+                break;
+                
+            case 'eliminar':
+                if ($kitId <= 0) {
+                    throw new Exception('ID de kit no válido');
+                }
+                
+                // Obtener datos del kit a eliminar
+                $stmt = $db->prepare("SELECT * FROM kits WHERE id = ? AND pedido_id = ?");
+                $stmt->execute([$kitId, $pedidoId]);
+                $kitEliminar = $stmt->fetch();
+                
+                if (!$kitEliminar) {
+                    throw new Exception('Kit no encontrado');
+                }
+                
+                $subtotalKitEliminado = floatval($kitEliminar['subtotal']);
+                
+                // Eliminar kit
+                $stmt = $db->prepare("DELETE FROM kits WHERE id = ?");
+                $stmt->execute([$kitId]);
+                
+                // Actualizar subtotal
+                $nuevoSubtotal = $subtotalAnterior - $subtotalKitEliminado;
+                
+                $stmt = $db->prepare("UPDATE pedidos SET subtotal = ?, saldo = subtotal - adelanto WHERE id = ?");
+                $stmt->execute([$nuevoSubtotal, $pedidoId]);
+                
+                // Registrar modificación
+                registrarModificacion(
+                    $pedidoId, 'DISMINUCION', 'kits', $kitId,
+                    'kit_eliminado', 
+                    $kitEliminar['camiseta_tipo'] ?? 'Kit',
+                    'Eliminado',
+                    intval($kitEliminar['cantidad']), 0,
+                    floatval($kitEliminar['precio_unitario']), 0,
+                    $motivo
+                );
+                
+                $modId = $db->lastInsertId();
+                $stmt = $db->prepare("UPDATE modificaciones_pedido SET subtotal_nuevo = ? WHERE id = ?");
+                $stmt->execute([$nuevoSubtotal, $modId]);
+                
+                break;
+                
+            default:
+                throw new Exception('Acción no válida para kit');
+        }
+        
+        // Registrar en historial general
+        logActivity($pedidoId, $user['id'], 'PEDIDO_MODIFICADO', "Kit {$accion}: {$motivo}");
+        
+        $db->commit();
+        
+        // Obtener nuevo saldo
+        $stmt = $db->prepare("SELECT subtotal, saldo FROM pedidos WHERE id = ?");
+        $stmt->execute([$pedidoId]);
+        $pedidoActualizado = $stmt->fetch();
+        
+        successResponse([
+            'pedido_id' => $pedidoId,
+            'subtotal' => $pedidoActualizado['subtotal'],
+            'saldo' => $pedidoActualizado['saldo']
+        ], 'Kit modificado exitosamente');
+        
+    } catch (Exception $e) {
+        $db->rollBack();
+        throw $e;
+    }
+}
+
+/**
+ * Modificar integrante del pedido
+ */
+function modificarIntegrante($input) {
+    global $user;
+    
+    $pedidoId = intval($input['pedido_id'] ?? 0);
+    $integranteId = intval($input['integrante_id'] ?? 0);
+    $accion = sanitize($input['accion'] ?? ''); // 'agregar', 'modificar', 'eliminar'
+    $motivo = sanitize($input['motivo'] ?? '');
+    
+    if ($pedidoId <= 0) {
+        errorResponse('ID de pedido no válido');
+    }
+    
+    validarPedidoModificable($pedidoId);
+    
+    $db = getDB();
+    $db->beginTransaction();
+    
+    try {
+        switch ($accion) {
+            case 'agregar':
+                $stmt = $db->prepare("INSERT INTO integrantes (pedido_id, nombre, talla, numero, observacion, incluye_short, sexo)
+                                      VALUES (?, ?, ?, ?, ?, ?, ?)");
+                $stmt->execute([
+                    $pedidoId,
+                    sanitize($input['nombre'] ?? ''),
+                    sanitize($input['talla'] ?? ''),
+                    sanitize($input['numero'] ?? ''),
+                    sanitize($input['observacion'] ?? ''),
+                    intval($input['incluye_short'] ?? 1),
+                    sanitize($input['sexo'] ?? 'Varon')
+                ]);
+                
+                $nuevoIntegranteId = $db->lastInsertId();
+                
+                registrarModificacion(
+                    $pedidoId, 'ADICION', 'integrantes', $nuevoIntegranteId,
+                    'nuevo_integrante', '', sanitize($input['nombre'] ?? ''),
+                    null, null, null, null, $motivo
+                );
+                break;
+                
+            case 'modificar':
+                if ($integranteId <= 0) {
+                    throw new Exception('ID de integrante no válido');
+                }
+                
+                $stmt = $db->prepare("SELECT * FROM integrantes WHERE id = ? AND pedido_id = ?");
+                $stmt->execute([$integranteId, $pedidoId]);
+                $integranteActual = $stmt->fetch();
+                
+                if (!$integranteActual) {
+                    throw new Exception('Integrante no encontrado');
+                }
+                
+                $stmt = $db->prepare("UPDATE integrantes SET 
+                    nombre = ?, talla = ?, numero = ?, observacion = ?, incluye_short = ?, sexo = ?
+                    WHERE id = ?");
+                $stmt->execute([
+                    sanitize($input['nombre'] ?? $integranteActual['nombre']),
+                    sanitize($input['talla'] ?? $integranteActual['talla']),
+                    sanitize($input['numero'] ?? $integranteActual['numero']),
+                    sanitize($input['observacion'] ?? $integranteActual['observacion']),
+                    intval($input['incluye_short'] ?? $integranteActual['incluye_short']),
+                    sanitize($input['sexo'] ?? $integranteActual['sexo']),
+                    $integranteId
+                ]);
+                
+                registrarModificacion(
+                    $pedidoId, 'CAMBIO', 'integrantes', $integranteId,
+                    'datos_integrante', 
+                    $integranteActual['nombre'],
+                    sanitize($input['nombre'] ?? $integranteActual['nombre']),
+                    null, null, null, null, $motivo
+                );
+                break;
+                
+            case 'eliminar':
+                if ($integranteId <= 0) {
+                    throw new Exception('ID de integrante no válido');
+                }
+                
+                $stmt = $db->prepare("SELECT nombre FROM integrantes WHERE id = ? AND pedido_id = ?");
+                $stmt->execute([$integranteId, $pedidoId]);
+                $integranteEliminar = $stmt->fetch();
+                
+                if (!$integranteEliminar) {
+                    throw new Exception('Integrante no encontrado');
+                }
+                
+                $stmt = $db->prepare("DELETE FROM integrantes WHERE id = ?");
+                $stmt->execute([$integranteId]);
+                
+                registrarModificacion(
+                    $pedidoId, 'DISMINUCION', 'integrantes', $integranteId,
+                    'integrante_eliminado', $integranteEliminar['nombre'], 'Eliminado',
+                    null, null, null, null, $motivo
+                );
+                break;
+                
+            default:
+                throw new Exception('Acción no válida para integrante');
+        }
+        
+        logActivity($pedidoId, $user['id'], 'PEDIDO_MODIFICADO', "Integrante {$accion}: {$motivo}");
+        
+        $db->commit();
+        successResponse(['pedido_id' => $pedidoId], 'Integrante modificado exitosamente');
+        
+    } catch (Exception $e) {
+        $db->rollBack();
+        throw $e;
+    }
+}
+
+/**
+ * Modificar merchandising del pedido
+ */
+function modificarMerchandising($input) {
+    global $user;
+    
+    $pedidoId = intval($input['pedido_id'] ?? 0);
+    $merchId = intval($input['merchandising_id'] ?? 0);
+    $accion = sanitize($input['accion'] ?? '');
+    $motivo = sanitize($input['motivo'] ?? '');
+    
+    if ($pedidoId <= 0) {
+        errorResponse('ID de pedido no válido');
+    }
+    
+    validarPedidoModificable($pedidoId);
+    
+    $db = getDB();
+    $db->beginTransaction();
+    
+    try {
+        $stmt = $db->prepare("SELECT subtotal FROM pedidos WHERE id = ?");
+        $stmt->execute([$pedidoId]);
+        $pedido = $stmt->fetch();
+        $subtotalAnterior = floatval($pedido['subtotal']);
+        
+        switch ($accion) {
+            case 'agregar':
+                $cantidad = intval($input['cantidad'] ?? 1);
+                $precio = floatval($input['precio_unitario'] ?? 0);
+                
+                $stmt = $db->prepare("INSERT INTO merchandising 
+                    (pedido_id, articulo, cantidad, precio_unitario, es_regalo, especificaciones)
+                    VALUES (?, ?, ?, ?, ?, ?)");
+                $stmt->execute([
+                    $pedidoId,
+                    sanitize($input['articulo'] ?? ''),
+                    $cantidad,
+                    $precio,
+                    intval($input['es_regalo'] ?? 0),
+                    sanitize($input['especificaciones'] ?? '')
+                ]);
+                
+                $nuevoMerchId = $db->lastInsertId();
+                $subtotalMerch = $cantidad * $precio;
+                
+                // Solo sumar al subtotal si no es regalo
+                if (!intval($input['es_regalo'] ?? 0)) {
+                    $nuevoSubtotal = $subtotalAnterior + $subtotalMerch;
+                    $stmt = $db->prepare("UPDATE pedidos SET subtotal = ?, saldo = subtotal - adelanto WHERE id = ?");
+                    $stmt->execute([$nuevoSubtotal, $pedidoId]);
+                }
+                
+                registrarModificacion(
+                    $pedidoId, 'ADICION', 'merchandising', $nuevoMerchId,
+                    'nuevo_merchandising', '', sanitize($input['articulo'] ?? ''),
+                    0, $cantidad, 0, $precio, $motivo
+                );
+                break;
+                
+            case 'modificar':
+                if ($merchId <= 0) {
+                    throw new Exception('ID de merchandising no válido');
+                }
+                
+                $stmt = $db->prepare("SELECT * FROM merchandising WHERE id = ? AND pedido_id = ?");
+                $stmt->execute([$merchId, $pedidoId]);
+                $merchActual = $stmt->fetch();
+                
+                if (!$merchActual) {
+                    throw new Exception('Merchandising no encontrado');
+                }
+                
+                $cantidadAnterior = intval($merchActual['cantidad']);
+                $precioAnterior = floatval($merchActual['precio_unitario']);
+                $subtotalAnteriorMerch = $cantidadAnterior * $precioAnterior;
+                
+                $nuevaCantidad = intval($input['cantidad'] ?? $cantidadAnterior);
+                $nuevoPrecio = floatval($input['precio_unitario'] ?? $precioAnterior);
+                $nuevoSubtotalMerch = $nuevaCantidad * $nuevoPrecio;
+                
+                $stmt = $db->prepare("UPDATE merchandising SET 
+                    articulo = ?, cantidad = ?, precio_unitario = ?, es_regalo = ?, especificaciones = ?
+                    WHERE id = ?");
+                $stmt->execute([
+                    sanitize($input['articulo'] ?? $merchActual['articulo']),
+                    $nuevaCantidad,
+                    $nuevoPrecio,
+                    intval($input['es_regalo'] ?? $merchActual['es_regalo']),
+                    sanitize($input['especificaciones'] ?? $merchActual['especificaciones']),
+                    $merchId
+                ]);
+                
+                // Ajustar subtotal si no es regalo
+                if (!intval($input['es_regalo'] ?? $merchActual['es_regalo'])) {
+                    $diferencia = $nuevoSubtotalMerch - ($merchActual['es_regalo'] ? 0 : $subtotalAnteriorMerch);
+                    $nuevoSubtotal = $subtotalAnterior + $diferencia;
+                    $stmt = $db->prepare("UPDATE pedidos SET subtotal = ?, saldo = subtotal - adelanto WHERE id = ?");
+                    $stmt->execute([$nuevoSubtotal, $pedidoId]);
+                }
+                
+                $tipoMod = $nuevaCantidad > $cantidadAnterior ? 'ADICION' : 
+                          ($nuevaCantidad < $cantidadAnterior ? 'DISMINUCION' : 'CAMBIO');
+                
+                registrarModificacion(
+                    $pedidoId, $tipoMod, 'merchandising', $merchId,
+                    'cantidad_precio',
+                    "Cantidad: {$cantidadAnterior}, Precio: {$precioAnterior}",
+                    "Cantidad: {$nuevaCantidad}, Precio: {$nuevoPrecio}",
+                    $cantidadAnterior, $nuevaCantidad,
+                    $precioAnterior, $nuevoPrecio, $motivo
+                );
+                break;
+                
+            case 'eliminar':
+                if ($merchId <= 0) {
+                    throw new Exception('ID de merchandising no válido');
+                }
+                
+                $stmt = $db->prepare("SELECT * FROM merchandising WHERE id = ? AND pedido_id = ?");
+                $stmt->execute([$merchId, $pedidoId]);
+                $merchEliminar = $stmt->fetch();
+                
+                if (!$merchEliminar) {
+                    throw new Exception('Merchandising no encontrado');
+                }
+                
+                $subtotalMerchEliminado = floatval($merchEliminar['cantidad']) * floatval($merchEliminar['precio_unitario']);
+                
+                $stmt = $db->prepare("DELETE FROM merchandising WHERE id = ?");
+                $stmt->execute([$merchId]);
+                
+                // Ajustar subtotal si no era regalo
+                if (!$merchEliminar['es_regalo']) {
+                    $nuevoSubtotal = $subtotalAnterior - $subtotalMerchEliminado;
+                    $stmt = $db->prepare("UPDATE pedidos SET subtotal = ?, saldo = subtotal - adelanto WHERE id = ?");
+                    $stmt->execute([$nuevoSubtotal, $pedidoId]);
+                }
+                
+                registrarModificacion(
+                    $pedidoId, 'DISMINUCION', 'merchandising', $merchId,
+                    'merchandising_eliminado', $merchEliminar['articulo'], 'Eliminado',
+                    intval($merchEliminar['cantidad']), 0,
+                    floatval($merchEliminar['precio_unitario']), 0, $motivo
+                );
+                break;
+                
+            default:
+                throw new Exception('Acción no válida para merchandising');
+        }
+        
+        logActivity($pedidoId, $user['id'], 'PEDIDO_MODIFICADO', "Merchandising {$accion}: {$motivo}");
+        
+        $db->commit();
+        
+        $stmt = $db->prepare("SELECT subtotal, saldo FROM pedidos WHERE id = ?");
+        $stmt->execute([$pedidoId]);
+        $pedidoActualizado = $stmt->fetch();
+        
+        successResponse([
+            'pedido_id' => $pedidoId,
+            'subtotal' => $pedidoActualizado['subtotal'],
+            'saldo' => $pedidoActualizado['saldo']
+        ], 'Merchandising modificado exitosamente');
+        
+    } catch (Exception $e) {
+        $db->rollBack();
+        throw $e;
+    }
+}
+
+/**
+ * Modificar adicional de talla
+ */
+function modificarAdicional($input) {
+    global $user;
+    
+    $pedidoId = intval($input['pedido_id'] ?? 0);
+    $adicionalId = intval($input['adicional_id'] ?? 0);
+    $accion = sanitize($input['accion'] ?? '');
+    $motivo = sanitize($input['motivo'] ?? '');
+    
+    if ($pedidoId <= 0) {
+        errorResponse('ID de pedido no válido');
+    }
+    
+    validarPedidoModificable($pedidoId);
+    
+    $db = getDB();
+    $db->beginTransaction();
+    
+    try {
+        $stmt = $db->prepare("SELECT subtotal FROM pedidos WHERE id = ?");
+        $stmt->execute([$pedidoId]);
+        $pedido = $stmt->fetch();
+        $subtotalAnterior = floatval($pedido['subtotal']);
+        
+        switch ($accion) {
+            case 'agregar':
+                $cantidad = intval($input['cantidad'] ?? 1);
+                $precio = floatval($input['precio_unitario'] ?? 0);
+                
+                $stmt = $db->prepare("INSERT INTO adicionales_talla (pedido_id, talla, cantidad, precio_unitario)
+                                      VALUES (?, ?, ?, ?)");
+                $stmt->execute([$pedidoId, sanitize($input['talla'] ?? ''), $cantidad, $precio]);
+                
+                $nuevoAdicionalId = $db->lastInsertId();
+                $subtotalAdicional = $cantidad * $precio;
+                $nuevoSubtotal = $subtotalAnterior + $subtotalAdicional;
+                
+                $stmt = $db->prepare("UPDATE pedidos SET subtotal = ?, saldo = subtotal - adelanto WHERE id = ?");
+                $stmt->execute([$nuevoSubtotal, $pedidoId]);
+                
+                registrarModificacion(
+                    $pedidoId, 'ADICION', 'adicionales_talla', $nuevoAdicionalId,
+                    'nuevo_adicional', '', sanitize($input['talla'] ?? ''),
+                    0, $cantidad, 0, $precio, $motivo
+                );
+                break;
+                
+            case 'modificar':
+                if ($adicionalId <= 0) {
+                    throw new Exception('ID de adicional no válido');
+                }
+                
+                $stmt = $db->prepare("SELECT * FROM adicionales_talla WHERE id = ? AND pedido_id = ?");
+                $stmt->execute([$adicionalId, $pedidoId]);
+                $adicionalActual = $stmt->fetch();
+                
+                if (!$adicionalActual) {
+                    throw new Exception('Adicional no encontrado');
+                }
+                
+                $cantidadAnterior = intval($adicionalActual['cantidad']);
+                $precioAnterior = floatval($adicionalActual['precio_unitario']);
+                $subtotalAnteriorAdic = $cantidadAnterior * $precioAnterior;
+                
+                $nuevaCantidad = intval($input['cantidad'] ?? $cantidadAnterior);
+                $nuevoPrecio = floatval($input['precio_unitario'] ?? $precioAnterior);
+                $nuevoSubtotalAdic = $nuevaCantidad * $nuevoPrecio;
+                
+                $stmt = $db->prepare("UPDATE adicionales_talla SET talla = ?, cantidad = ?, precio_unitario = ? WHERE id = ?");
+                $stmt->execute([
+                    sanitize($input['talla'] ?? $adicionalActual['talla']),
+                    $nuevaCantidad,
+                    $nuevoPrecio,
+                    $adicionalId
+                ]);
+                
+                $diferencia = $nuevoSubtotalAdic - $subtotalAnteriorAdic;
+                $nuevoSubtotal = $subtotalAnterior + $diferencia;
+                
+                $stmt = $db->prepare("UPDATE pedidos SET subtotal = ?, saldo = subtotal - adelanto WHERE id = ?");
+                $stmt->execute([$nuevoSubtotal, $pedidoId]);
+                
+                $tipoMod = $nuevaCantidad > $cantidadAnterior ? 'ADICION' : 
+                          ($nuevaCantidad < $cantidadAnterior ? 'DISMINUCION' : 'CAMBIO');
+                
+                registrarModificacion(
+                    $pedidoId, $tipoMod, 'adicionales_talla', $adicionalId,
+                    'cantidad_precio',
+                    "Talla: {$adicionalActual['talla']}, Cantidad: {$cantidadAnterior}",
+                    "Talla: " . sanitize($input['talla'] ?? $adicionalActual['talla']) . ", Cantidad: {$nuevaCantidad}",
+                    $cantidadAnterior, $nuevaCantidad,
+                    $precioAnterior, $nuevoPrecio, $motivo
+                );
+                break;
+                
+            case 'eliminar':
+                if ($adicionalId <= 0) {
+                    throw new Exception('ID de adicional no válido');
+                }
+                
+                $stmt = $db->prepare("SELECT * FROM adicionales_talla WHERE id = ? AND pedido_id = ?");
+                $stmt->execute([$adicionalId, $pedidoId]);
+                $adicionalEliminar = $stmt->fetch();
+                
+                if (!$adicionalEliminar) {
+                    throw new Exception('Adicional no encontrado');
+                }
+                
+                $subtotalAdicionalElim = intval($adicionalEliminar['cantidad']) * floatval($adicionalEliminar['precio_unitario']);
+                
+                $stmt = $db->prepare("DELETE FROM adicionales_talla WHERE id = ?");
+                $stmt->execute([$adicionalId]);
+                
+                $nuevoSubtotal = $subtotalAnterior - $subtotalAdicionalElim;
+                
+                $stmt = $db->prepare("UPDATE pedidos SET subtotal = ?, saldo = subtotal - adelanto WHERE id = ?");
+                $stmt->execute([$nuevoSubtotal, $pedidoId]);
+                
+                registrarModificacion(
+                    $pedidoId, 'DISMINUCION', 'adicionales_talla', $adicionalId,
+                    'adicional_eliminado', $adicionalEliminar['talla'], 'Eliminado',
+                    intval($adicionalEliminar['cantidad']), 0,
+                    floatval($adicionalEliminar['precio_unitario']), 0, $motivo
+                );
+                break;
+                
+            default:
+                throw new Exception('Acción no válida para adicional');
+        }
+        
+        logActivity($pedidoId, $user['id'], 'PEDIDO_MODIFICADO', "Adicional {$accion}: {$motivo}");
+        
+        $db->commit();
+        
+        $stmt = $db->prepare("SELECT subtotal, saldo FROM pedidos WHERE id = ?");
+        $stmt->execute([$pedidoId]);
+        $pedidoActualizado = $stmt->fetch();
+        
+        successResponse([
+            'pedido_id' => $pedidoId,
+            'subtotal' => $pedidoActualizado['subtotal'],
+            'saldo' => $pedidoActualizado['saldo']
+        ], 'Adicional modificado exitosamente');
+        
+    } catch (Exception $e) {
+        $db->rollBack();
+        throw $e;
+    }
+}
+
+/**
+ * Modificar datos generales del pedido (adelanto, observaciones, etc.)
+ */
+function modificarDatosGenerales($input) {
+    global $user;
+    
+    $pedidoId = intval($input['pedido_id'] ?? 0);
+    $motivo = sanitize($input['motivo'] ?? '');
+    
+    if ($pedidoId <= 0) {
+        errorResponse('ID de pedido no válido');
+    }
+    
+    validarPedidoModificable($pedidoId);
+    
+    $db = getDB();
+    $db->beginTransaction();
+    
+    try {
+        // Obtener datos actuales
+        $stmt = $db->prepare("SELECT * FROM pedidos WHERE id = ?");
+        $stmt->execute([$pedidoId]);
+        $pedidoActual = $stmt->fetch();
+        
+        if (!$pedidoActual) {
+            throw new Exception('Pedido no encontrado');
+        }
+        
+        $adelantoAnterior = floatval($pedidoActual['adelanto']);
+        $nuevoAdelanto = floatval($input['adelanto'] ?? $adelantoAnterior);
+        
+        // Actualizar campos permitidos
+        $stmt = $db->prepare("UPDATE pedidos SET 
+            observaciones_generales = ?,
+            fecha_entrega = ?,
+            hora_entrega = ?,
+            adelanto = ?,
+            saldo = subtotal - ?
+            WHERE id = ?");
+        
+        $stmt->execute([
+            sanitize($input['observaciones_generales'] ?? $pedidoActual['observaciones_generales']),
+            $input['fecha_entrega'] ?? $pedidoActual['fecha_entrega'],
+            $input['hora_entrega'] ?? $pedidoActual['hora_entrega'],
+            $nuevoAdelanto,
+            $nuevoAdelanto,
+            $pedidoId
+        ]);
+        
+        // Registrar modificación si cambió el adelanto
+        if ($nuevoAdelanto != $adelantoAnterior) {
+            registrarModificacion(
+                $pedidoId, 'CAMBIO', 'pedidos', $pedidoId,
+                'adelanto',
+                "S/ {$adelantoAnterior}",
+                "S/ {$nuevoAdelanto}",
+                null, null,
+                $adelantoAnterior, $nuevoAdelanto, $motivo
+            );
+        }
+        
+        logActivity($pedidoId, $user['id'], 'PEDIDO_MODIFICADO', "Datos generales actualizados: {$motivo}");
+        
+        $db->commit();
+        
+        $stmt = $db->prepare("SELECT subtotal, adelanto, saldo FROM pedidos WHERE id = ?");
+        $stmt->execute([$pedidoId]);
+        $pedidoActualizado = $stmt->fetch();
+        
+        successResponse([
+            'pedido_id' => $pedidoId,
+            'subtotal' => $pedidoActualizado['subtotal'],
+            'adelanto' => $pedidoActualizado['adelanto'],
+            'saldo' => $pedidoActualizado['saldo']
+        ], 'Datos generales actualizados exitosamente');
+        
+    } catch (Exception $e) {
+        $db->rollBack();
+        throw $e;
+    }
+}
+
+/**
+ * Obtener historial de modificaciones de un pedido
+ */
+function getHistorialModificaciones() {
+    $pedidoId = intval($_GET['pedido_id'] ?? 0);
+    
+    if ($pedidoId <= 0) {
+        errorResponse('ID de pedido no válido');
+    }
+    
+    $db = getDB();
+    
+    $stmt = $db->prepare("
+        SELECT m.*, u.nombre as usuario_nombre, u.rol as usuario_rol
+        FROM modificaciones_pedido m
+        LEFT JOIN usuarios u ON m.usuario_id = u.id
+        WHERE m.pedido_id = ?
+        ORDER BY m.fecha_modificacion DESC
+    ");
+    $stmt->execute([$pedidoId]);
+    $modificaciones = $stmt->fetchAll();
+    
+    // Formatear datos
+    foreach ($modificaciones as &$mod) {
+        $mod['fecha_modificacion_fmt'] = formatDate($mod['fecha_modificacion'], 'd/m/Y H:i');
+        $mod['subtotal_anterior_fmt'] = formatCurrency($mod['subtotal_anterior'] ?? 0);
+        $mod['subtotal_nuevo_fmt'] = formatCurrency($mod['subtotal_nuevo'] ?? 0);
+        $mod['precio_anterior_fmt'] = formatCurrency($mod['precio_anterior'] ?? 0);
+        $mod['precio_nuevo_fmt'] = formatCurrency($mod['precio_nuevo'] ?? 0);
+        
+        // Icono según tipo
+        $mod['icono'] = $mod['tipo_modificacion'] === 'ADICION' ? 'fa-plus-circle' :
+                       ($mod['tipo_modificacion'] === 'DISMINUCION' ? 'fa-minus-circle' : 'fa-edit');
+        
+        // Color según tipo
+        $mod['color'] = $mod['tipo_modificacion'] === 'ADICION' ? 'success' :
+                       ($mod['tipo_modificacion'] === 'DISMINUCION' ? 'danger' : 'warning');
+    }
+    
+    successResponse(['modificaciones' => $modificaciones, 'total' => count($modificaciones)]);
 }
 
 /**

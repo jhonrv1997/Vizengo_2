@@ -29,6 +29,16 @@ $etapa = $_GET['etapa'];
 $db = getDB();
 
 // Funciones helper
+function formatDate($date, $format = 'd/m/Y') {
+    if (empty($date) || $date === '0000-00-00') return '-';
+    $d = new DateTime($date);
+    return $d->format($format);
+}
+
+function formatCurrency($amount) {
+    return 'S/ ' . number_format($amount, 2, '.', ',');
+}
+
 function getStatusBadge($status, $type = 'contrato') {
     $badgeClass = '';
     $statusText = '';
@@ -801,11 +811,29 @@ function renderEtapaEntrega($pedidoId, $db) {
 }
 
 function renderHistorial($pedidoId, $db) {
-    $stmt = $db->prepare("SELECT h.accion, h.descripcion, h.fecha_accion, u.nombre as usuario_nombre 
+    // Obtener historial general
+    $stmt = $db->prepare("SELECT h.accion, h.descripcion, h.fecha_accion, u.nombre as usuario_nombre, u.rol as usuario_rol,
+                          'general' as tipo_historial
                           FROM historial_pedidos h
                           LEFT JOIN usuarios u ON h.usuario_id = u.id
-                          WHERE h.pedido_id = ? ORDER BY h.fecha_accion DESC");
-    $stmt->execute([$pedidoId]);
+                          WHERE h.pedido_id = ?
+                          UNION ALL
+                          SELECT 
+                          CONCAT('MODIFICACIÓN - ', m.tipo_modificacion) as accion,
+                          CONCAT('Tabla: ', m.tabla_afectada, 
+                                 CASE WHEN m.campo_modificado IS NOT NULL THEN CONCAT(' | Campo: ', m.campo_modificado) ELSE '' END,
+                                 CASE WHEN m.valor_anterior IS NOT NULL THEN CONCAT(' | De: ', m.valor_anterior, ' A: ', m.valor_nuevo) ELSE '' END,
+                                 CASE WHEN m.motivo IS NOT NULL AND m.motivo != '' THEN CONCAT(' | Motivo: ', m.motivo) ELSE '' END
+                          ) as descripcion,
+                          m.fecha_modificacion as fecha_accion,
+                          u.nombre as usuario_nombre,
+                          u.rol as usuario_rol,
+                          'modificacion' as tipo_historial
+                          FROM modificaciones_pedido m
+                          LEFT JOIN usuarios u ON m.usuario_id = u.id
+                          WHERE m.pedido_id = ?
+                          ORDER BY fecha_accion DESC");
+    $stmt->execute([$pedidoId, $pedidoId]);
     $historial = $stmt->fetchAll();
     ?>
     
@@ -813,24 +841,75 @@ function renderHistorial($pedidoId, $db) {
     <div class="historial-list">
         <?php foreach ($historial as $item): ?>
         <div class="historial-item">
-            <div class="historial-icon">
-                <i class="fas fa-<?php 
-                    echo strpos($item['accion'], 'CREADO') !== false ? 'plus' : 
-                         (strpos($item['accion'], 'ENTREGADO') !== false ? 'check' : 
-                         (strpos($item['accion'], 'ACTUALIZADO') !== false ? 'edit' : 'info')); 
-                ?>"></i>
+            <div class="historial-icon" style="
+                <?php 
+                $color = '#6b7280';
+                $icon = 'info';
+                
+                if (strpos($item['accion'], 'CREADO') !== false) {
+                    $color = 'var(--success)'; $icon = 'plus';
+                } elseif (strpos($item['accion'], 'ENTREGADO') !== false) {
+                    $color = 'var(--success)'; $icon = 'check';
+                } elseif (strpos($item['accion'], 'ACTUALIZADO') !== false) {
+                    $color = 'var(--warning)'; $icon = 'edit';
+                } elseif (strpos($item['accion'], 'MODIFICACIÓN') !== false) {
+                    if (strpos($item['accion'], 'ADICION') !== false) {
+                        $color = 'var(--success)'; $icon = 'plus-circle';
+                    } elseif (strpos($item['accion'], 'DISMINUCION') !== false) {
+                        $color = 'var(--danger)'; $icon = 'minus-circle';
+                    } else {
+                        $color = 'var(--warning)'; $icon = 'edit';
+                    }
+                }
+                echo "background: " . $color . "20; color: " . $color . ";";
+                ?>
+            ">
+                <i class="fas fa-<?php echo $icon; ?>"></i>
             </div>
             <div class="historial-content">
-                <div class="historial-accion"><?php echo htmlspecialchars($item['accion']); ?></div>
-                <div class="historial-desc"><?php echo htmlspecialchars($item['descripcion']); ?></div>
+                <div class="historial-accion" style="font-weight: 600; color: var(--text);">
+                    <?php echo htmlspecialchars($item['accion']); ?>
+                    <?php if ($item['tipo_historial'] === 'modificacion'): ?>
+                    <span style="background: var(--primary)20; color: var(--primary); padding: 2px 6px; border-radius: 10px; font-size: 0.7rem; margin-left: 6px;">DETALLE</span>
+                    <?php endif; ?>
+                </div>
+                <div class="historial-desc" style="font-size: 0.85rem; color: var(--muted); margin-top: 4px;"><?php echo htmlspecialchars($item['descripcion']); ?></div>
             </div>
-            <div class="historial-fecha">
-                <?php echo formatDate($item['fecha_accion'], 'd/m/Y H:i'); ?><br>
-                <small><?php echo htmlspecialchars($item['usuario_nombre']); ?></small>
+            <div class="historial-fecha" style="text-align: right; min-width: 120px;">
+                <div style="font-size: 0.85rem; color: var(--text);"><?php echo formatDate($item['fecha_accion'], 'd/m/Y H:i'); ?></div>
+                <small style="color: var(--muted);"><?php echo htmlspecialchars($item['usuario_nombre']); ?> (<?php echo $item['usuario_rol']; ?>)</small>
             </div>
         </div>
         <?php endforeach; ?>
     </div>
+    
+    <style>
+        .historial-list { margin-top: 16px; }
+        .historial-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            padding: 14px;
+            background: #fafbff;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+        .historial-item:hover {
+            border-color: var(--primary);
+        }
+        .historial-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .historial-content { flex: 1; }
+        .historial-fecha { font-size: 0.8rem; }
+    </style>
     <?php else: ?>
     <div class="empty-state">
         <i class="fas fa-history"></i>
