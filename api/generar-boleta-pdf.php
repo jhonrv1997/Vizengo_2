@@ -223,10 +223,10 @@ $pdf->SetTextColor(30, 30, 30);
 $pdf->SetFont('Helvetica', 'B', 8);
 
 // Anchos de columna: Cantidad(15), Descripcion(95), P.Unit(25), Subtotal(25)
-$pdf->Cell(15, 7, txt('Cant.'), 1, 0, 'C', true);
-$pdf->Cell(120, 7, txt('Descripcion'), 1, 0, 'C', true);
-$pdf->Cell(20, 7, txt('P. Unit.'), 1, 0, 'C', true);
-$pdf->Cell(20, 7, txt('Subtotal'), 1, 1, 'C', true);
+$pdf->Cell(10, 7, txt('Cant.'), 1, 0, 'C', true);
+$pdf->Cell(145, 7, txt('Descripcion'), 1, 0, 'C', true);
+$pdf->Cell(15, 7, txt('P. Unit.'), 1, 0, 'C', true);
+$pdf->Cell(15, 7, txt('Subtotal'), 1, 1, 'C', true);
 
 $pdf->SetFont('Helvetica', '', 8);
 $pdf->SetTextColor(30, 30, 30);
@@ -242,8 +242,9 @@ if (!empty($kits)) {
             if ($kit['camiseta_talla']) $descripcion .= ' (Talla: ' . $kit['camiseta_talla'] . ')';
         }
         if ($kit['short_tipo']) {
-            $descripcion .= ' | Short: ' . $kit['short_tipo'];
+            $descripcion .= $kit['short_tipo'];
             if ($kit['short_tela']) $descripcion .= ' - ' . $kit['short_tela'];
+			if ($kit['short_talla']) $descripcion .= ' (Talla: ' . $kit['short_talla'] . ')';
         }
         if ($kit['medias_tipo'] && $kit['medias_tipo'] != 'NINGUNO') {
             $descripcion .= ' | Medias: ' . $kit['medias_tipo'];
@@ -253,10 +254,10 @@ if (!empty($kits)) {
         // Calcular subtotal
         $subtotal = $kit['cantidad'] * $kit['precio_unitario'];
         
-        $pdf->Cell(15, 6, $kit['cantidad'], 1, 0, 'C');
-        $pdf->Cell(120, 6, txt(substr($descripcion, 0, 70)), 1, 0, 'L');
-        $pdf->Cell(20, 6, formatoMoneda($kit['precio_unitario']), 1, 0, 'R');
-        $pdf->Cell(20, 6, formatoMoneda($subtotal), 1, 1, 'R');
+        $pdf->Cell(10, 6, $kit['cantidad'], 1, 0, 'C');
+        $pdf->Cell(145, 6, txt(substr($descripcion, 0, 100)), 1, 0, 'L');
+        $pdf->Cell(15, 6, formatoMoneda($kit['precio_unitario']), 1, 0, 'R');
+        $pdf->Cell(15, 6, formatoMoneda($subtotal), 1, 1, 'R');
     }
 }
 
@@ -266,10 +267,10 @@ if (!empty($adicionalesTalla)) {
         $descripcion = 'Adicional Talla Especial: ' . $adicional['talla'];
         $subtotal = $adicional['cantidad'] * $adicional['precio_unitario'];
         
-        $pdf->Cell(15, 6, $adicional['cantidad'], 1, 0, 'C');
-        $pdf->Cell(120, 6, txt($descripcion), 1, 0, 'L');
-        $pdf->Cell(20, 6, formatoMoneda($adicional['precio_unitario']), 1, 0, 'R');
-        $pdf->Cell(20, 6, formatoMoneda($subtotal), 1, 1, 'R');
+        $pdf->Cell(10, 6, $adicional['cantidad'], 1, 0, 'C');
+        $pdf->Cell(145, 6, txt($descripcion), 1, 0, 'L');
+        $pdf->Cell(15, 6, formatoMoneda($adicional['precio_unitario']), 1, 0, 'R');
+        $pdf->Cell(15, 6, formatoMoneda($subtotal), 1, 1, 'R');
     }
 }
 
@@ -287,10 +288,10 @@ if (!empty($merchandising)) {
         $precioUnit = $merch['es_regalo'] ? 0 : $merch['precio_unitario'];
         $subtotal = $merch['cantidad'] * $precioUnit;
         
-        $pdf->Cell(15, 6, $merch['cantidad'], 1, 0, 'C');
-        $pdf->Cell(120, 6, txt(substr($descripcion, 0, 70)), 1, 0, 'L');
-        $pdf->Cell(20, 6, $merch['es_regalo'] ? txt('REGALO') : formatoMoneda($precioUnit), 1, 0, 'R');
-        $pdf->Cell(20, 6, formatoMoneda($subtotal), 1, 1, 'R');
+        $pdf->Cell(10, 6, $merch['cantidad'], 1, 0, 'C');
+        $pdf->Cell(145, 6, txt(substr($descripcion, 0, 70)), 1, 0, 'L');
+        $pdf->Cell(15, 6, $merch['es_regalo'] ? txt('REGALO') : formatoMoneda($precioUnit), 1, 0, 'R');
+        $pdf->Cell(15, 6, formatoMoneda($subtotal), 1, 1, 'R');
     }
 }
 
