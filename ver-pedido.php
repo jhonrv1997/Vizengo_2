@@ -565,7 +565,18 @@ function getStatusBadge($status, $type = 'contrato') {
     <!-- Pipeline visual de etapas -->
     <div class="section-header">
         <div class="section-title"><i class="fas fa-route" style="color:var(--primary);margin-right:8px;"></i>Progreso del Pedido</div>
-        <a href="lista-pedidos.php" class="section-link"><i class="fas fa-arrow-left"></i> Volver a la lista</a>
+        <div style="display:flex;gap:10px;">
+            <?php 
+            // Verificar si el pedido es modificable (no completó planchado y no está entregado)
+            $modificable = $pedido['estado_planchado'] !== 'completo' && $pedido['estado_general'] !== 'entregado' && in_array($user['rol'], ['vendedor', 'administrador']);
+            if ($modificable): 
+            ?>
+            <a href="modificar-pedido.php?id=<?php echo $pedidoId; ?>" class="section-link" style="background:var(--warning);color:white;">
+                <i class="fas fa-edit"></i> Modificar Pedido
+            </a>
+            <?php endif; ?>
+            <a href="lista-pedidos.php" class="section-link"><i class="fas fa-arrow-left"></i> Volver a la lista</a>
+        </div>
     </div>
     
     <div class="stage-pipeline" style="margin-bottom: 24px;">
