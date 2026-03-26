@@ -29,16 +29,18 @@ $etapa = $_GET['etapa'];
 $db = getDB();
 
 // Funciones helper
+/*
 function formatDate($date, $format = 'd/m/Y') {
     if (empty($date) || $date === '0000-00-00') return '-';
     $d = new DateTime($date);
     return $d->format($format);
 }
-
+*/
+/*
 function formatCurrency($amount) {
     return 'S/ ' . number_format($amount, 2, '.', ',');
 }
-
+*/
 function getStatusBadge($status, $type = 'contrato') {
     $badgeClass = '';
     $statusText = '';
