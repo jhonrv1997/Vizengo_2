@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: sql201.infinityfree.com
--- Tiempo de generación: 23-03-2026 a las 20:10:10
+-- Tiempo de generación: 25-03-2026 a las 21:31:19
 -- Versión del servidor: 11.4.10-MariaDB
 -- Versión de PHP: 7.2.22
 
@@ -383,6 +383,32 @@ INSERT INTO `merchandising` (`id`, `pedido_id`, `articulo`, `cantidad`, `precio_
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `modificaciones_pedido`
+--
+
+CREATE TABLE `modificaciones_pedido` (
+  `id` int(11) NOT NULL,
+  `pedido_id` int(11) NOT NULL,
+  `usuario_id` int(11) NOT NULL COMMENT 'Usuario que realiza la modificación',
+  `tipo_modificacion` enum('ADICION','DISMINUCION','CAMBIO') NOT NULL,
+  `tabla_afectada` varchar(50) NOT NULL COMMENT 'Tabla donde se hizo el cambio (kits, integrantes, merchandising, etc)',
+  `registro_id` int(11) DEFAULT NULL COMMENT 'ID del registro afectado',
+  `campo_modificado` varchar(50) DEFAULT NULL COMMENT 'Campo específico modificado',
+  `valor_anterior` text DEFAULT NULL COMMENT 'Valor antes del cambio',
+  `valor_nuevo` text DEFAULT NULL COMMENT 'Valor después del cambio',
+  `cantidad_anterior` int(11) DEFAULT NULL COMMENT 'Cantidad anterior (para cambios de cantidad)',
+  `cantidad_nueva` int(11) DEFAULT NULL COMMENT 'Nueva cantidad',
+  `precio_anterior` decimal(10,2) DEFAULT NULL COMMENT 'Precio anterior',
+  `precio_nuevo` decimal(10,2) DEFAULT NULL COMMENT 'Nuevo precio',
+  `subtotal_anterior` decimal(10,2) DEFAULT NULL COMMENT 'Subtotal anterior del pedido',
+  `subtotal_nuevo` decimal(10,2) DEFAULT NULL COMMENT 'Nuevo subtotal del pedido',
+  `motivo` text DEFAULT NULL COMMENT 'Motivo o razón de la modificación',
+  `fecha_modificacion` timestamp NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci COMMENT='Historial de modificaciones de pedidos';
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `pedidos`
 --
 
@@ -539,7 +565,7 @@ CREATE TABLE `usuarios` (
 --
 
 INSERT INTO `usuarios` (`id`, `username`, `password`, `nombre`, `celular`, `email`, `rol`, `activo`, `fecha_creacion`, `ultimo_acceso`) VALUES
-(1, '71234567', '$2y$10$ZzbdBIDxaYdylOR8dBaIyeVeHZHSa6xPPpGO5KyYqVoiVY7Oo9HRi', 'yohana', '991122597', 'jhon@vizengo.com', 'vendedor', 1, '2026-03-21 17:05:47', '2026-03-24 00:03:01'),
+(1, '71234567', '$2y$10$ZzbdBIDxaYdylOR8dBaIyeVeHZHSa6xPPpGO5KyYqVoiVY7Oo9HRi', 'yohana', '991122597', 'jhon@vizengo.com', 'vendedor', 1, '2026-03-21 17:05:47', '2026-03-26 01:24:05'),
 (3, 'carolina', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Carolina', '999999', 'carolina@vizengo.com', 'disenador', 1, '2026-03-21 17:05:47', '2026-03-22 21:42:51'),
 (4, 'erick', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Erick', '912366', 'erick@vizengo.com', 'disenador', 1, '2026-03-21 17:05:47', NULL),
 (5, 'admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Administrador', '99999999', 'admin@vizengo.com', 'administrador', 1, '2026-03-21 17:05:47', '2026-03-22 22:04:34'),
@@ -591,7 +617,8 @@ ALTER TABLE `disenos_finales`
   ADD PRIMARY KEY (`id`),
   ADD KEY `disenador_id` (`disenador_id`),
   ADD KEY `idx_pedido` (`pedido_id`),
-  ADD KEY `idx_tipo` (`tipo`);
+  ADD KEY `idx_tipo` (`tipo`),
+  ADD KEY `idx_pedido_aprobado` (`pedido_id`,`aprobado`);
 
 --
 -- Indices de la tabla `disenos_iniciales`
@@ -614,7 +641,8 @@ ALTER TABLE `entregas`
 ALTER TABLE `historial_pedidos`
   ADD PRIMARY KEY (`id`),
   ADD KEY `usuario_id` (`usuario_id`),
-  ADD KEY `idx_pedido` (`pedido_id`);
+  ADD KEY `idx_pedido` (`pedido_id`),
+  ADD KEY `idx_pedido_fecha` (`pedido_id`,`fecha_accion`);
 
 --
 -- Indices de la tabla `imagenes_integrantes`
@@ -630,7 +658,8 @@ ALTER TABLE `integrantes`
   ADD PRIMARY KEY (`id`),
   ADD KEY `idx_pedido` (`pedido_id`),
   ADD KEY `idx_talla` (`talla`),
-  ADD KEY `idx_sexo` (`sexo`);
+  ADD KEY `idx_sexo` (`sexo`),
+  ADD KEY `idx_pedido_sexo` (`pedido_id`,`sexo`);
 
 --
 -- Indices de la tabla `kits`
@@ -647,6 +676,18 @@ ALTER TABLE `merchandising`
   ADD KEY `pedido_id` (`pedido_id`);
 
 --
+-- Indices de la tabla `modificaciones_pedido`
+--
+ALTER TABLE `modificaciones_pedido`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_pedido` (`pedido_id`),
+  ADD KEY `idx_usuario` (`usuario_id`),
+  ADD KEY `idx_tipo` (`tipo_modificacion`),
+  ADD KEY `idx_fecha` (`fecha_modificacion`),
+  ADD KEY `idx_mod_pedido_fecha` (`pedido_id`,`fecha_modificacion`),
+  ADD KEY `idx_mod_usuario_fecha` (`usuario_id`,`fecha_modificacion`);
+
+--
 -- Indices de la tabla `pedidos`
 --
 ALTER TABLE `pedidos`
@@ -656,7 +697,8 @@ ALTER TABLE `pedidos`
   ADD KEY `usuario_id` (`usuario_id`),
   ADD KEY `idx_codigo` (`codigo`),
   ADD KEY `idx_estado` (`estado_general`),
-  ADD KEY `idx_fecha_entrega` (`fecha_entrega`);
+  ADD KEY `idx_fecha_entrega` (`fecha_entrega`),
+  ADD KEY `idx_estado_general_fecha` (`estado_general`,`fecha_entrega`);
 
 --
 -- Indices de la tabla `planchado`
@@ -778,6 +820,12 @@ ALTER TABLE `merchandising`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
+-- AUTO_INCREMENT de la tabla `modificaciones_pedido`
+--
+ALTER TABLE `modificaciones_pedido`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT de la tabla `pedidos`
 --
 ALTER TABLE `pedidos`
@@ -886,6 +934,13 @@ ALTER TABLE `kits`
 --
 ALTER TABLE `merchandising`
   ADD CONSTRAINT `merchandising_ibfk_1` FOREIGN KEY (`pedido_id`) REFERENCES `pedidos` (`id`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `modificaciones_pedido`
+--
+ALTER TABLE `modificaciones_pedido`
+  ADD CONSTRAINT `modificaciones_pedido_ibfk_1` FOREIGN KEY (`pedido_id`) REFERENCES `pedidos` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `modificaciones_pedido_ibfk_2` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`);
 
 --
 -- Filtros para la tabla `pedidos`
