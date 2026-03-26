@@ -8,24 +8,28 @@ require_once __DIR__ . '/../config.php';
 startSecureSession();
 setCorsHeaders();
 
-// Determinar la acción
-$action = $_GET['action'] ?? '';
+// Solo procesar acciones si este archivo es accedido directamente
+// (no cuando es incluido desde otro archivo como pedidos.php)
+if (basename($_SERVER['SCRIPT_NAME']) === basename(__FILE__)) {
+    // Determinar la acción
+    $action = $_GET['action'] ?? '';
 
-switch ($action) {
-    case 'login':
-        handleLogin();
-        break;
-    case 'logout':
-        handleLogout();
-        break;
-    case 'check':
-        checkSession();
-        break;
-    case 'verify':
-        verifyToken();
-        break;
-    default:
-        errorResponse('Acción no válida', 400);
+    switch ($action) {
+        case 'login':
+            handleLogin();
+            break;
+        case 'logout':
+            handleLogout();
+            break;
+        case 'check':
+            checkSession();
+            break;
+        case 'verify':
+            verifyToken();
+            break;
+        default:
+            errorResponse('Acción no válida', 400);
+    }
 }
 
 /**
