@@ -94,18 +94,18 @@ class BoletaPDF extends FPDF {
        // $this->SetTextColor(43, 79, 255); // Color primario
       //  $this->Cell(0, 12, txt('VIZENGO'), 0, 1, 'C');
         
-        $this->SetFont('Helvetica', '', 10);
-        $this->SetTextColor(100, 100, 100);
-        $this->Cell(0, 6, txt('Tienda de Ropa Deportiva'), 0, 1, 'C');
+    //    $this->SetFont('Helvetica', '', 10);
+    //    $this->SetTextColor(100, 100, 100);
+    //    $this->Cell(0, 6, txt('Tienda de Ropa Deportiva'), 0, 1, 'C');
         
-        $this->Ln(5);
+     //   $this->Ln(5);
         
         // Linea separadora
-        $this->SetDrawColor(43, 79, 255);
-        $this->SetLineWidth(0.5);
-        $this->Line(10, $this->GetY(), 200, $this->GetY());
+   //     $this->SetDrawColor(43, 79, 255);
+    //    $this->SetLineWidth(0.5);
+    //    $this->Line(10, $this->GetY(), 200, $this->GetY());
         
-        $this->Ln(8);
+    //    $this->Ln(5);
         
         // Titulo del documento
         $this->SetFont('Helvetica', 'B', 16);
@@ -116,18 +116,21 @@ class BoletaPDF extends FPDF {
         $this->SetTextColor(80, 80, 80);
         $this->Cell(0, 6, txt('Codigo: ' . $this->pedidoCodigo), 0, 1, 'C');
         
-        $this->Ln(8);
+        $this->Ln(5);
     }
     
     function Footer() {
-        $this->SetY(-25);
+        $this->SetY(-30);
         $this->SetDrawColor(200, 200, 200);
         $this->Line(10, $this->GetY(), 200, $this->GetY());
         
         $this->Ln(5);
         $this->SetFont('Helvetica', 'I', 8);
         $this->SetTextColor(128, 128, 128);
-        $this->Cell(0, 5, txt('Documento generado automaticamente - VIZENGO'), 0, 1, 'C');
+        $this->Cell(0, 5, txt('Todo contrato se realiza con el 50% de adelanto y el 50% al momento de la entrega.'), 0, 1, 'C');
+		$this->Cell(0, 5, txt('Una vez aprobado el diseño previo; No hay derecho a correcciones, reclamos y/o devoluciones.'), 0, 1, 'C');
+	    $this->Cell(0, 5, txt('Dentro del diseño digital se incluye el logo de la tienda.'), 0, 1, 'C');
+		$this->Cell(0, 5, txt('No colocamos marcas registradas. Pasado los 15 dias, No hay lugar a reclamo.'), 0, 1, 'C');
         $this->Cell(0, 5, txt('Fecha de generacion: ' . date('d/m/Y H:i:s')), 0, 0, 'C');
     }
 }
@@ -336,6 +339,7 @@ $pdf->Ln(10);
 // =====================================================
 // OBSERVACIONES
 // =====================================================
+/*
 if (!empty($pedido['observaciones_generales']) || !empty($pedido['observaciones_diseno'])) {
     $pdf->SetFont('Helvetica', 'B', 11);
     $pdf->SetFillColor(43, 79, 255);
@@ -355,7 +359,8 @@ if (!empty($pedido['observaciones_generales']) || !empty($pedido['observaciones_
     
     $pdf->Ln(5);
 }
-
+*/
+/*
 // =====================================================
 // FIRMA Y SELLO
 // =====================================================
@@ -370,6 +375,7 @@ $pdf->SetTextColor(100, 100, 100);
 $pdf->Cell(60, 5, txt('Firma del Cliente'), 0, 0, 'C');
 $pdf->Cell(70, 5, '', 0, 0);
 $pdf->Cell(60, 5, txt('Firma del Vendedor'), 0, 1, 'C');
+*/
 
 // Generar el PDF
 $filename = 'Contrato_' . $pedido['codigo'] . '_' . date('Ymd_His') . '.pdf';
