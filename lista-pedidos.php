@@ -339,6 +339,7 @@ if ($user['rol'] === 'administrador') {
                     <th>Contrato</th>
                     <th>Diseño</th>
                     <th>Planchado</th>
+                    <th>Costura</th>
                     <th>Estado</th>
                     <th>Acciones</th>
                 </tr>
@@ -346,7 +347,7 @@ if ($user['rol'] === 'administrador') {
             <tbody id="tablaBody">
                 <?php if (count($pedidos) === 0): ?>
                 <tr>
-                    <td colspan="10" style="text-align:center;padding:40px;color:var(--muted);">
+                    <td colspan="11" style="text-align:center;padding:40px;color:var(--muted);">
                         <i class="fas fa-inbox" style="font-size:2rem;margin-bottom:10px;display:block;opacity:0.3;"></i>
                         No se encontraron pedidos
                     </td>
@@ -410,6 +411,7 @@ if ($user['rol'] === 'administrador') {
                     <td><span class="bdg bdg-<?php echo $p['estado_contrato'] === 'completo' ? 'ok' : 'inc'; ?>"><span class="dot"></span><?php echo $p['estado_contrato'] === 'completo' ? 'Completo' : 'Pendiente'; ?></span></td>
                     <td><span class="bdg bdg-<?php echo $p['estado_diseno'] === 'completo' ? 'ok' : ($p['estado_diseno'] === 'aprobado' ? 'ok' : 'pend'); ?>"><span class="dot"></span><?php echo $p['estado_diseno'] === 'completo' || $p['estado_diseno'] === 'aprobado' ? 'Completo' : 'Pendiente'; ?></span></td>
                     <td><span class="bdg bdg-<?php echo $p['estado_planchado'] === 'completo' ? 'ok' : 'pend'; ?>"><span class="dot"></span><?php echo $p['estado_planchado'] === 'completo' ? 'Completo' : 'Pendiente'; ?></span></td>
+                    <td><span class="bdg bdg-<?php echo $p['estado_costura'] === 'completo' ? 'ok' : 'pend'; ?>"><span class="dot"></span><?php echo $p['estado_costura'] === 'completo' ? 'Completo' : 'Pendiente'; ?></span></td>
                     <td>
                         <?php if ($p['estado_general'] === 'entregado'): ?>
                         <span class="bdg bdg-done"><span class="dot"></span>Entregado</span>
