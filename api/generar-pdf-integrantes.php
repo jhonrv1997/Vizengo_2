@@ -31,7 +31,9 @@ $db = getDB();
 // Obtener datos principales del pedido
 $stmt = $db->prepare("SELECT 
                         p.id, p.codigo, 
-                        c.nombre as cliente_nombre
+                        c.nombre as cliente_nombre,
+                        c.celular as cliente_celular,
+                        p.vendedor_asignado
                        FROM pedidos p 
                        LEFT JOIN clientes c ON p.cliente_id = c.id
                        WHERE p.id = ?");
@@ -94,11 +96,15 @@ $tallasDamas = contarTallas($damas);
 class IntegrantesPDF extends FPDF {
     private $pedidoCodigo;
     private $clienteNombre;
+    private $clienteCelular;
+    private $vendedorAsignado;
     
-    function __construct($pedidoCodigo, $clienteNombre) {
+    function __construct($pedidoCodigo, $clienteNombre, $clienteCelular, $vendedorAsignado) {
         parent::__construct();
         $this->pedidoCodigo = $pedidoCodigo;
         $this->clienteNombre = $clienteNombre;
+        $this->clienteCelular = $clienteCelular;
+        $this->vendedorAsignado = $vendedorAsignado;
     }
     
     function Header() {
@@ -107,18 +113,18 @@ class IntegrantesPDF extends FPDF {
       //  $this->SetTextColor(43, 79, 255); // Color primario
       //  $this->Cell(0, 10, txt('VIZENGO'), 0, 1, 'C');
         
-        $this->SetFont('Helvetica', '', 10);
-        $this->SetTextColor(100, 100, 100);
-        $this->Cell(0, 6, txt('Tienda de Ropa Deportiva'), 0, 1, 'C');
+      //  $this->SetFont('Helvetica', '', 10);
+    //    $this->SetTextColor(100, 100, 100);
+     //   $this->Cell(0, 6, txt('Tienda de Ropa Deportiva'), 0, 1, 'C');
         
-        $this->Ln(3);
+      //  $this->Ln(3);
         
         // Linea separadora
-        $this->SetDrawColor(43, 79, 255);
-        $this->SetLineWidth(0.5);
-        $this->Line(10, $this->GetY(), 200, $this->GetY());
+     //   $this->SetDrawColor(43, 79, 255);
+    //    $this->SetLineWidth(0.5);
+    //    $this->Line(10, $this->GetY(), 200, $this->GetY());
         
-        $this->Ln(6);
+   //     $this->Ln(6);
         
         // Titulo del documento
         $this->SetFont('Helvetica', 'B', 14);
@@ -129,24 +135,41 @@ class IntegrantesPDF extends FPDF {
         $this->SetTextColor(80, 80, 80);
         $this->Cell(0, 5, txt('Pedido: ' . $this->pedidoCodigo . ' | Cliente: ' . $this->clienteNombre), 0, 1, 'C');
         
+        // Mostrar celular y vendedor asignado
+        $this->SetFont('Helvetica', '', 9);
+        $this->SetTextColor(100, 100, 100);
+        $infoExtra = '';
+        if ($this->clienteCelular) {
+            $infoExtra .= 'Celular de Cliente: ' . $this->clienteCelular;
+        }
+        if ($this->vendedorAsignado) {
+            $infoExtra .= ($infoExtra ? ' | ' : '') . 'Vendedor: ' . $this->vendedorAsignado;
+        }
+        if ($infoExtra) {
+            $this->Cell(0, 5, txt($infoExtra), 0, 1, 'C');
+        }
+        
         $this->Ln(5);
     }
     
     function Footer() {
-        $this->SetY(-20);
+        $this->SetY(-28);
         $this->SetDrawColor(200, 200, 200);
         $this->Line(10, $this->GetY(), 200, $this->GetY());
         
         $this->Ln(3);
         $this->SetFont('Helvetica', 'I', 8);
         $this->SetTextColor(128, 128, 128);
-        $this->Cell(0, 5, txt('Documento generado automaticamente - VIZENGO'), 0, 1, 'C');
+        $this->Cell(0, 5, txt('Todo contrato se realiza con el 50% de adelanto y el 50% al momento de la entrega.'), 0, 1, 'C');
+		$this->Cell(0, 5, txt('Una vez aprobado el diseño previo; No hay derecho a correcciones, reclamos y/o devoluciones.'), 0, 1, 'C');
+	    $this->Cell(0, 5, txt('Dentro del diseño digital se incluye el logo de la tienda.'), 0, 1, 'C');
+		$this->Cell(0, 5, txt('No colocamos marcas registradas. Pasado los 15 dias, No hay lugar a reclamo.'), 0, 1, 'C');
         $this->Cell(0, 5, txt('Fecha de generacion: ' . date('d/m/Y H:i:s')), 0, 0, 'C');
     }
 }
 
 // Crear el PDF
-$pdf = new IntegrantesPDF($pedido['codigo'], $pedido['cliente_nombre']);
+$pdf = new IntegrantesPDF($pedido['codigo'], $pedido['cliente_nombre'], $pedido['cliente_celular'], $pedido['vendedor_asignado']);
 $pdf->AddPage();
 $pdf->SetAutoPageBreak(true, 25);
 
