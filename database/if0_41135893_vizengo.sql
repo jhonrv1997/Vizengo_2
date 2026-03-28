@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: sql201.infinityfree.com
--- Tiempo de generación: 26-03-2026 a las 19:29:22
+-- Tiempo de generación: 27-03-2026 a las 20:40:11
 -- Versión del servidor: 11.4.10-MariaDB
 -- Versión de PHP: 7.2.22
 
@@ -43,7 +43,8 @@ CREATE TABLE `adicionales_talla` (
 INSERT INTO `adicionales_talla` (`id`, `pedido_id`, `talla`, `cantidad`, `precio_unitario`) VALUES
 (2, 4, 'XL', 1, '12.00'),
 (3, 9, 'XL', 1, '16.00'),
-(4, 5, 'XL', 1, '8.00');
+(4, 5, 'XL', 1, '8.00'),
+(5, 11, 'XL', 1, '35.00');
 
 -- --------------------------------------------------------
 
@@ -67,14 +68,15 @@ CREATE TABLE `clientes` (
 
 INSERT INTO `clientes` (`id`, `nombre`, `celular`, `email`, `direccion`, `observaciones`, `fecha_creacion`) VALUES
 (1, 'Yanina', '', '', 'Av. Principal 123', NULL, '2026-03-21 17:16:22'),
-(2, 'Nitza', '', '', 'Av. Principal 123', NULL, '2026-03-21 17:16:22'),
+(2, 'Nitza', '256249866', '', 'Av. Principal 123', NULL, '2026-03-21 17:16:22'),
 (3, 'Lizeth', '', '', 'Av. Principal 123', NULL, '2026-03-21 17:16:22'),
 (4, 'Karina', NULL, NULL, NULL, NULL, '2026-03-21 19:00:04'),
 (8, 'leslie perez', '996969695', NULL, NULL, NULL, '2026-03-21 23:04:30'),
 (9, 'alejandra paredes', '969696316', NULL, NULL, NULL, '2026-03-22 16:51:59'),
 (10, 'elena marinez', '969393697', NULL, NULL, NULL, '2026-03-22 20:17:18'),
 (11, 'luis marmolejo', '126165456', NULL, NULL, NULL, '2026-03-23 13:56:11'),
-(12, 'Liliana Smith', '969669301', NULL, NULL, NULL, '2026-03-23 23:24:44');
+(12, 'Liliana Smith', '969669301', NULL, NULL, NULL, '2026-03-23 23:24:44'),
+(13, 'stefyi', '969699664', NULL, NULL, NULL, '2026-03-27 00:33:04');
 
 -- --------------------------------------------------------
 
@@ -215,7 +217,35 @@ INSERT INTO `disenos_iniciales` (`id`, `pedido_id`, `imagen_path`, `observacione
 (4, 5, 'uploads/referencias/69c01e2eaf31c_1774198318.jpg', '', '2026-03-22 16:51:59'),
 (5, 6, 'uploads/referencias/69c04e4f93035_1774210639.jpg', '', '2026-03-22 20:17:18'),
 (6, 9, 'uploads/referencias/69c1cbbbd89bc_1774308283.jpg', '', '2026-03-23 23:24:44'),
-(7, 9, 'uploads/referencias/69c1cbbbd94f8_1774308283.jpg', '', '2026-03-23 23:24:44');
+(7, 9, 'uploads/referencias/69c1cbbbd94f8_1774308283.jpg', '', '2026-03-23 23:24:44'),
+(8, 10, 'uploads/referencias/69c5d0404544d_1774571584.jpg', '', '2026-03-27 00:33:04'),
+(9, 11, 'uploads/referencias/69c5f45db9af0_1774580829.jpeg', '', '2026-03-27 03:07:09');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `enlaces_registro`
+--
+
+CREATE TABLE `enlaces_registro` (
+  `id` int(11) NOT NULL,
+  `pedido_id` int(11) NOT NULL,
+  `token` varchar(64) NOT NULL,
+  `url_enlace` varchar(255) NOT NULL,
+  `estado` enum('pendiente','usado','expirado','cancelado') DEFAULT 'pendiente',
+  `fecha_creacion` timestamp NOT NULL DEFAULT current_timestamp(),
+  `fecha_expiracion` datetime DEFAULT NULL,
+  `fecha_uso` datetime DEFAULT NULL,
+  `ip_cliente` varchar(45) DEFAULT NULL,
+  `created_by` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci;
+
+--
+-- Volcado de datos para la tabla `enlaces_registro`
+--
+
+INSERT INTO `enlaces_registro` (`id`, `pedido_id`, `token`, `url_enlace`, `estado`, `fecha_creacion`, `fecha_expiracion`, `fecha_uso`, `ip_cliente`, `created_by`) VALUES
+(1, 10, '6bbbd64f8df93e4fd53837614aa6474da0c1c73e29fe8647d75f3ed572d7b4ad', 'https://pruebasvizengo.gt.tc/registro-cliente.php?token=6bbbd64f8df93e4fd53837614aa6474da0c1c73e29fe8647d75f3ed572d7b4ad', 'usado', '2026-03-28 00:36:04', '2026-03-30 19:36:04', '2026-03-27 19:36:39', '190.233.91.212', 1);
 
 -- --------------------------------------------------------
 
@@ -280,7 +310,27 @@ INSERT INTO `historial_pedidos` (`id`, `pedido_id`, `usuario_id`, `accion`, `des
 (10, 8, 1, 'PEDIDO_ENTREGADO', 'Pedido entregado al cliente Nitza', '2026-03-26 03:05:22'),
 (11, 5, 1, 'PEDIDO_ENTREGADO', 'Pedido entregado al cliente alejandra paredes', '2026-03-26 03:05:59'),
 (12, 7, 1, 'PEDIDO_ENTREGADO', 'Pedido entregado al cliente luis marmolejo', '2026-03-26 03:06:26'),
-(13, 9, 1, 'PEDIDO_ENTREGADO', 'Pedido entregado al cliente Liliana Smith', '2026-03-26 03:07:25');
+(13, 9, 1, 'PEDIDO_ENTREGADO', 'Pedido entregado al cliente Liliana Smith', '2026-03-26 03:07:25'),
+(14, 10, 1, 'PEDIDO_CREADO', 'Pedido PED-2026-0007 creado', '2026-03-27 00:33:04'),
+(15, 11, 1, 'PEDIDO_CREADO', 'Pedido PED-2026-0008 creado', '2026-03-27 03:07:09'),
+(16, 11, 1, 'PEDIDO_MODIFICADO', 'Kit modificar: ', '2026-03-27 03:18:54'),
+(17, 11, 1, 'PEDIDO_MODIFICADO', 'Integrante agregar: ', '2026-03-27 03:19:18'),
+(18, 11, 1, 'PEDIDO_MODIFICADO', 'Integrante agregar: ', '2026-03-27 03:19:38'),
+(19, 11, 1, 'PEDIDO_MODIFICADO', 'Integrante agregar: ', '2026-03-27 03:19:55'),
+(20, 11, 1, 'PEDIDO_MODIFICADO', 'Datos generales actualizados: ', '2026-03-27 03:20:23'),
+(21, 10, 1, 'ENLACE_GENERADO', 'Enlace de registro generado: https://pruebasvizengo.gt.tc/registro-cliente.php?token=317eae1e8ac5729bdce19b4236b9b4121bd73feb6f63974467c3483ec120a794', '2026-03-27 23:40:51'),
+(22, 10, 1, 'ENLACE_GENERADO', 'Enlace de registro generado: https://pruebasvizengo.gt.tc/registro-cliente.php?token=b4f5018182ad3b6f6341f018954f7e3e861eea3523eab4a32760059ad6e7d35c', '2026-03-27 23:40:51'),
+(23, 10, 1, 'ENLACE_GENERADO', 'Enlace de registro generado: https://pruebasvizengo.gt.tc/registro-cliente.php?token=b01d7688953f3d9c1b9a31b59dde79ca8dd8dc780b76493cd973d732d2c64e9a', '2026-03-27 23:42:17'),
+(24, 10, 1, 'ENLACE_GENERADO', 'Enlace de registro generado: https://pruebasvizengo.gt.tc/registro-cliente.php?token=a4e10cf3847884b11b7917eefaf0ecf442c7fc52e07481ac436a195528612535', '2026-03-27 23:42:17'),
+(25, 10, 1, 'ENLACE_GENERADO', 'Enlace de registro generado: https://pruebasvizengo.gt.tc/registro-cliente.php?token=6913eedfbcb4615508f820629eea41be590bb9600526a850556a0a2fd50a5bb4', '2026-03-27 23:58:24'),
+(26, 10, 1, 'INTEGRANTES_REGISTRADOS_CLIENTE', 'Integrantes registrados por cliente vía enlace', '2026-03-28 00:01:21'),
+(27, 10, 1, 'INTEGRANTES_REGISTRADOS_CLIENTE', 'Integrantes registrados por cliente vía enlace', '2026-03-28 00:05:59'),
+(28, 10, 1, 'INTEGRANTES_REGISTRADOS_CLIENTE', 'Integrantes registrados por cliente vía enlace', '2026-03-28 00:09:48'),
+(29, 10, 1, 'ENLACE_GENERADO', 'Enlace de registro generado: https://pruebasvizengo.gt.tc/registro-cliente.php?token=0e06eaebdfa4d51b903324b4ac40cadf2362596d025ee566039e47d90ac701d4', '2026-03-28 00:31:11'),
+(30, 10, 1, 'INTEGRANTES_REGISTRADOS_CLIENTE', 'Integrantes registrados por cliente vía enlace', '2026-03-28 00:33:09'),
+(31, 10, 1, 'INTEGRANTES_REGISTRADOS_CLIENTE', 'Integrantes registrados por cliente vía enlace', '2026-03-28 00:34:11'),
+(32, 10, 1, 'ENLACE_GENERADO', 'Enlace de registro generado: https://pruebasvizengo.gt.tc/registro-cliente.php?token=6bbbd64f8df93e4fd53837614aa6474da0c1c73e29fe8647d75f3ed572d7b4ad', '2026-03-28 00:36:04'),
+(33, 10, 1, 'INTEGRANTES_REGISTRADOS_CLIENTE', 'Integrantes registrados por cliente vía enlace', '2026-03-28 00:36:39');
 
 -- --------------------------------------------------------
 
@@ -294,6 +344,13 @@ CREATE TABLE `imagenes_integrantes` (
   `imagen_path` varchar(255) NOT NULL,
   `fecha_subida` timestamp NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci;
+
+--
+-- Volcado de datos para la tabla `imagenes_integrantes`
+--
+
+INSERT INTO `imagenes_integrantes` (`id`, `pedido_id`, `imagen_path`, `fecha_subida`) VALUES
+(1, 11, 'uploads/integrantes/69c5f4c418744.jpeg', '2026-03-27 03:08:52');
 
 -- --------------------------------------------------------
 
@@ -350,7 +407,13 @@ INSERT INTO `integrantes` (`id`, `pedido_id`, `nombre`, `talla`, `numero`, `obse
 (31, 9, 'tet', 'M', '4', '', 1, 'Dama'),
 (32, 9, 'lindw', 'M', '8', '', 1, 'Varon'),
 (33, 9, 'uoini', 'S', '9', '', 1, 'Dama'),
-(34, 9, 'sungo', 'L', '11', '', 1, 'Varon');
+(34, 9, 'sungo', 'L', '11', '', 1, 'Varon'),
+(35, 11, 'HGFD', '2', '33', '', 0, 'Dama'),
+(36, 11, 'MJNHJ', '14', 'JHGF', '', 1, 'Varon'),
+(37, 11, 'LUIS', 'M', '8', '', 1, 'Varon'),
+(38, 11, 'DFG', 'M', '5', '', 1, 'Varon'),
+(39, 11, 'DFG', 'Z', '8', '', 1, 'Varon'),
+(45, 10, 'jhoncito', 'L', '12', 'arquero', 1, 'Varon');
 
 -- --------------------------------------------------------
 
@@ -385,7 +448,9 @@ INSERT INTO `kits` (`id`, `pedido_id`, `camiseta_tipo`, `camiseta_tela`, `camise
 (5, 6, 'CAMISETA MANGA CORTA', 'Tela: ALGODON', 'S,M,L', 'SHORT', 'Tela: DRY', 'S,M,L', 'RODILLERA', 'COLOR VERDE', 4, '14.00', '56.00'),
 (6, 7, 'CAMISETA MANGA CORTA', 'Tela: ESPIGA', 's,m,l', 'SHORT', 'Tela: NOVA', 's,m,l', 'RODILLERA', '', 20, '55.00', '1100.00'),
 (7, 8, 'CAMISETA MANGA CORTA', 'Tela: ESPIGA', '-', 'SHORT', 'Tela: ESPIGA', '-', 'NINGUNO', '', 5, '35.00', '175.00'),
-(8, 9, 'POLO PUBLICITARIO', 'Tela: ALGODON', 'S,M,L', 'SHORT', 'Tela: FULL LICRA', 'S,M,L', 'NINGUNO', '', 4, '14.00', '56.00');
+(8, 9, 'POLO PUBLICITARIO', 'Tela: ALGODON', 'S,M,L', 'SHORT', 'Tela: FULL LICRA', 'S,M,L', 'NINGUNO', '', 4, '14.00', '56.00'),
+(9, 10, 'CAMISETA MANGA CORTA', 'Tela: ESPIGA', 'S,M,L', 'SHORT', 'Tela: ESPIGA', 'S,M,L', 'NINGUNO', '', 1, '35.00', '35.00'),
+(10, 11, 'CAMISETA MANGA CORTA', 'Tela: ESPIGA', '-', 'SHORT', 'Tela: ESPIGA', '-', 'NINGUNO', '', 5, '35.00', '175.00');
 
 -- --------------------------------------------------------
 
@@ -412,7 +477,8 @@ INSERT INTO `merchandising` (`id`, `pedido_id`, `articulo`, `cantidad`, `precio_
 (3, 5, 'BANDERA', 4, '2.00', 0, 'BANDERA PERUANA'),
 (4, 6, 'BANDEROLA', 1, '8.00', 0, 'FONDO VERDE OSCURO'),
 (5, 7, 'BANDEROLA', 1, '38.00', 0, ''),
-(6, 9, 'BANDEROLA', 1, '0.00', 1, 'FONDO VERDE CLARO');
+(6, 9, 'BANDEROLA', 1, '0.00', 1, 'FONDO VERDE CLARO'),
+(7, 11, 'BANDEROLA', 1, '15.00', 0, '');
 
 -- --------------------------------------------------------
 
@@ -445,7 +511,12 @@ CREATE TABLE `modificaciones_pedido` (
 --
 
 INSERT INTO `modificaciones_pedido` (`id`, `pedido_id`, `usuario_id`, `tipo_modificacion`, `tabla_afectada`, `registro_id`, `campo_modificado`, `valor_anterior`, `valor_nuevo`, `cantidad_anterior`, `cantidad_nueva`, `precio_anterior`, `precio_nuevo`, `subtotal_anterior`, `subtotal_nuevo`, `motivo`, `fecha_modificacion`) VALUES
-(1, 5, 1, 'ADICION', 'adicionales_talla', 4, 'nuevo_adicional', '', 'XL', 0, 1, '0.00', '8.00', '100.00', '100.00', 'pedido del cliente adicional', '2026-03-26 02:34:20');
+(1, 5, 1, 'ADICION', 'adicionales_talla', 4, 'nuevo_adicional', '', 'XL', 0, 1, '0.00', '8.00', '100.00', '100.00', 'pedido del cliente adicional', '2026-03-26 02:34:20'),
+(2, 11, 1, 'ADICION', 'kits', 10, 'cantidad_precio', 'Cantidad: 1, Precio: 35', 'Cantidad: 5, Precio: 35', 1, 5, '35.00', '35.00', '225.00', '225.00', '', '2026-03-27 03:18:54'),
+(3, 11, 1, 'ADICION', 'integrantes', 37, 'nuevo_integrante', '', 'LUIS', NULL, NULL, NULL, NULL, '225.00', '225.00', '', '2026-03-27 03:19:18'),
+(4, 11, 1, 'ADICION', 'integrantes', 38, 'nuevo_integrante', '', 'DFG', NULL, NULL, NULL, NULL, '225.00', '225.00', '', '2026-03-27 03:19:38'),
+(5, 11, 1, 'ADICION', 'integrantes', 39, 'nuevo_integrante', '', 'DFG', NULL, NULL, NULL, NULL, '225.00', '225.00', '', '2026-03-27 03:19:55'),
+(6, 11, 1, 'CAMBIO', 'pedidos', 11, 'adelanto', 'S/ 50', 'S/ 55', NULL, NULL, '50.00', '55.00', '225.00', '225.00', '', '2026-03-27 03:20:23');
 
 -- --------------------------------------------------------
 
@@ -491,7 +562,9 @@ INSERT INTO `pedidos` (`id`, `codigo`, `cliente_id`, `usuario_id`, `tipo_contrat
 (6, 'PED-2026-0003', 10, 1, 'PEDIDO', 'TIENDA VIZENGO', '', 'Jhon', '969393697', 'institucion evez ser', 'TEXTO MOTIVACIONAL', 'completo', 'completo', 'completo', 'completo', 'completo', 'entregado', '2026-03-22 20:17:18', '2026-03-24', '18:16:00', NULL, '2026-03-26 03:04:58', '64.00', '20.00', '44.00'),
 (7, 'PED-2026-0004', 11, 1, 'PEDIDO', 'TIENDA VIZENGO', '', 'yohana', '126165456', 'amigo de betsy', '', 'completo', 'completo', 'completo', 'completo', 'completo', 'entregado', '2026-03-23 13:56:11', '2026-03-25', '14:26:00', NULL, '2026-03-26 03:06:26', '1138.00', '800.00', '338.00'),
 (8, 'PED-2026-0005', 2, 1, 'PEDIDO', 'TIENDA VIZENGO', '', 'yohana', '', '', '', 'completo', 'completo', 'completo', 'completo', 'completo', 'entregado', '2026-03-23 22:27:55', '2026-03-24', '16:24:00', NULL, '2026-03-26 03:05:22', '175.00', '10.00', '165.00'),
-(9, 'PED-2026-0006', 12, 1, 'PEDIDO', 'TIENDA VIZENGO', '', 'yohana', '969669301', 'clienta ejecutiva', 'LOGO A LA DERECHA', 'completo', 'completo', 'completo', 'completo', 'completo', 'entregado', '2026-03-23 23:24:44', '2026-03-26', '20:21:00', NULL, '2026-03-26 03:07:25', '72.00', '30.00', '42.00');
+(9, 'PED-2026-0006', 12, 1, 'PEDIDO', 'TIENDA VIZENGO', '', 'yohana', '969669301', 'clienta ejecutiva', 'LOGO A LA DERECHA', 'completo', 'completo', 'completo', 'completo', 'completo', 'entregado', '2026-03-23 23:24:44', '2026-03-26', '20:21:00', NULL, '2026-03-26 03:07:25', '72.00', '30.00', '42.00'),
+(10, 'PED-2026-0007', 13, 1, 'PEDIDO', 'TIENDA VIZENGO', '', 'yohana', '969699664', 'perfecto pedido', 'COLOR AZUL', 'completo', 'completo', 'pendiente', 'pendiente', 'pendiente', 'en_proceso', '2026-03-27 00:33:04', '2026-03-28', '23:33:00', NULL, NULL, '35.00', '10.00', '25.00'),
+(11, 'PED-2026-0008', 2, 1, 'COSTURA', 'TIENDA 3', '', 'yohana', '256249866', 'YFHXTFY', 'GFYFXLO6ESK', 'completo', 'completo', 'pendiente', 'pendiente', 'pendiente', 'en_proceso', '2026-03-27 03:07:09', '2026-03-27', '13:09:00', NULL, NULL, '225.00', '55.00', '170.00');
 
 -- --------------------------------------------------------
 
@@ -610,11 +683,11 @@ CREATE TABLE `usuarios` (
 --
 
 INSERT INTO `usuarios` (`id`, `username`, `password`, `nombre`, `celular`, `email`, `rol`, `activo`, `fecha_creacion`, `ultimo_acceso`) VALUES
-(1, '71234567', '$2y$10$ZzbdBIDxaYdylOR8dBaIyeVeHZHSa6xPPpGO5KyYqVoiVY7Oo9HRi', 'yohana', '991122597', 'jhon@vizengo.com', 'vendedor', 1, '2026-03-21 17:05:47', '2026-03-26 23:21:06'),
+(1, '71234567', '$2y$10$ZzbdBIDxaYdylOR8dBaIyeVeHZHSa6xPPpGO5KyYqVoiVY7Oo9HRi', 'yohana', '991122597', 'jhon@vizengo.com', 'vendedor', 1, '2026-03-21 17:05:47', '2026-03-28 00:35:55'),
 (3, 'carolina', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Carolina', '999999', 'carolina@vizengo.com', 'disenador', 1, '2026-03-21 17:05:47', '2026-03-22 21:42:51'),
 (4, 'erick', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Erick', '912366', 'erick@vizengo.com', 'disenador', 1, '2026-03-21 17:05:47', NULL),
 (5, 'admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Administrador', '99999999', 'admin@vizengo.com', 'administrador', 1, '2026-03-21 17:05:47', '2026-03-22 22:04:34'),
-(6, '74207930', '$2y$10$5BmJfp82nfZC.ruijt.ElevcaNC2a4rN.atgEQrBnEuPhIQXNMfy6', 'Andrea Marcos', '997379560', '', 'disenador', 1, '2026-03-22 21:58:35', '2026-03-26 02:57:04');
+(6, '74207930', '$2y$10$5BmJfp82nfZC.ruijt.ElevcaNC2a4rN.atgEQrBnEuPhIQXNMfy6', 'Andrea Marcos', '997379560', '', 'disenador', 1, '2026-03-22 21:58:35', '2026-03-27 02:06:39');
 
 --
 -- Índices para tablas volcadas
@@ -671,6 +744,15 @@ ALTER TABLE `disenos_finales`
 ALTER TABLE `disenos_iniciales`
   ADD PRIMARY KEY (`id`),
   ADD KEY `pedido_id` (`pedido_id`);
+
+--
+-- Indices de la tabla `enlaces_registro`
+--
+ALTER TABLE `enlaces_registro`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `token` (`token`),
+  ADD KEY `idx_pedido` (`pedido_id`),
+  ADD KEY `idx_estado` (`estado`);
 
 --
 -- Indices de la tabla `entregas`
@@ -790,13 +872,13 @@ ALTER TABLE `usuarios`
 -- AUTO_INCREMENT de la tabla `adicionales_talla`
 --
 ALTER TABLE `adicionales_talla`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT de la tabla `clientes`
 --
 ALTER TABLE `clientes`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT de la tabla `costura`
@@ -826,7 +908,13 @@ ALTER TABLE `disenos_finales`
 -- AUTO_INCREMENT de la tabla `disenos_iniciales`
 --
 ALTER TABLE `disenos_iniciales`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+
+--
+-- AUTO_INCREMENT de la tabla `enlaces_registro`
+--
+ALTER TABLE `enlaces_registro`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT de la tabla `entregas`
@@ -838,43 +926,43 @@ ALTER TABLE `entregas`
 -- AUTO_INCREMENT de la tabla `historial_pedidos`
 --
 ALTER TABLE `historial_pedidos`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=34;
 
 --
 -- AUTO_INCREMENT de la tabla `imagenes_integrantes`
 --
 ALTER TABLE `imagenes_integrantes`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT de la tabla `integrantes`
 --
 ALTER TABLE `integrantes`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=35;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=46;
 
 --
 -- AUTO_INCREMENT de la tabla `kits`
 --
 ALTER TABLE `kits`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT de la tabla `merchandising`
 --
 ALTER TABLE `merchandising`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT de la tabla `modificaciones_pedido`
 --
 ALTER TABLE `modificaciones_pedido`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT de la tabla `pedidos`
 --
 ALTER TABLE `pedidos`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
 -- AUTO_INCREMENT de la tabla `planchado`
