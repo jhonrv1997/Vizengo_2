@@ -52,11 +52,11 @@ if ($pedidoId === 0) {
     }
     
     // Obtener la cantidad total de kits (suma del campo cantidad)
-	 $stmt = $db->prepare("SELECT 
-		COALESCE((SELECT SUM(cantidad) FROM kits WHERE pedido_id = ?), 0) + 
-		COALESCE((SELECT SUM(cantidad) FROM adicionales_talla WHERE pedido_id = ?), 0) as total_kits");
-	 $stmt->execute([$pedidoId, $pedidoId]);
-	 $result = $stmt->fetch();
+         $stmt = $db->prepare("SELECT 
+                COALESCE((SELECT SUM(cantidad) FROM kits WHERE pedido_id = ?), 0) + 
+                COALESCE((SELECT SUM(cantidad) FROM adicionales_talla WHERE pedido_id = ?), 0) as total_kits");
+         $stmt->execute([$pedidoId, $pedidoId]);
+         $result = $stmt->fetch();
     $cantidadMaximaKits = intval($result['total_kits']);
     
     // Cargar integrantes existentes
@@ -73,12 +73,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     if ($pedidoId > 0) {
 // Obtener cantidad máxima de kits para validación (kits + adicionales_talla)
-	 $stmt = $db->prepare("SELECT 
-		COALESCE((SELECT SUM(cantidad) FROM kits WHERE pedido_id = ?), 0) + 
-		COALESCE((SELECT SUM(cantidad) FROM adicionales_talla WHERE pedido_id = ?), 0) as total_kits");
-	 $stmt->execute([$pedidoId, $pedidoId]);
-	 $result = $stmt->fetch();
-	 $cantidadMaximaKitsPost = intval($result['total_kits']);
+         $stmt = $db->prepare("SELECT 
+                COALESCE((SELECT SUM(cantidad) FROM kits WHERE pedido_id = ?), 0) + 
+                COALESCE((SELECT SUM(cantidad) FROM adicionales_talla WHERE pedido_id = ?), 0) as total_kits");
+         $stmt->execute([$pedidoId, $pedidoId]);
+         $result = $stmt->fetch();
+         $cantidadMaximaKitsPost = intval($result['total_kits']);
         
         $db->beginTransaction();
         try {
@@ -245,6 +245,50 @@ $tallas = ['2','4','6','8','10','12','14','16','XS','S','M','L','XL','XXL'];
         
         /* Disabled state */
         .disabled-section{opacity:0.5;pointer-events:none;}
+        
+        /* Modalidad selector */
+        .modalidad-selector{background:linear-gradient(135deg,rgba(43,79,255,.06),rgba(43,79,255,.02));border:1px solid rgba(43,79,255,.2);border-radius:12px;padding:20px;margin-bottom:20px;}
+        .modalidad-title{font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:700;color:var(--text);margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+        .modalidad-options{display:flex;gap:12px;flex-wrap:wrap;}
+        .modalidad-option{flex:1;min-width:200px;background:white;border:2px solid var(--border);border-radius:10px;padding:16px;cursor:pointer;transition:all .2s;position:relative;}
+        .modalidad-option:hover{border-color:var(--primary);background:rgba(43,79,255,.02);}
+        .modalidad-option.active{border-color:var(--primary);background:rgba(43,79,255,.06);}
+        .modalidad-option.active::after{content:'✓';position:absolute;top:8px;right:8px;background:var(--primary);color:white;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold;}
+        .modalidad-option input[type="radio"]{display:none;}
+        .modalidad-option .mo-icon{font-size:1.8rem;margin-bottom:8px;}
+        .modalidad-option .mo-title{font-family:'Barlow Condensed',sans-serif;font-size:.95rem;font-weight:700;color:var(--text);margin-bottom:4px;}
+        .modalidad-option .mo-desc{font-size:.75rem;color:var(--muted);}
+        .modalidad-option[data-modalidad="imagen"] .mo-icon{color:var(--success);}
+        .modalidad-option[data-modalidad="manual"] .mo-icon{color:var(--primary);}
+        .modalidad-option[data-modalidad="enlace"] .mo-icon{color:#f59e0b;}
+        
+        /* Enlace generado */
+        .enlace-generado-card{background:linear-gradient(135deg,rgba(245,158,11,.1),rgba(245,158,11,.05));border:2px solid #f59e0b;border-radius:12px;padding:20px;margin-bottom:20px;display:none;}
+        .enlace-generado-card.show{display:block;}
+        .enlace-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+        .enlace-url-box{background:white;border:2px dashed #f59e0b;border-radius:8px;padding:12px;display:flex;align-items:center;gap:10px;}
+        .enlace-url{flex:1;font-family:monospace;font-size:.85rem;color:var(--text);word-break:break-all;}
+        .btn-copy{background:#f59e0b;color:white;border:none;border-radius:6px;padding:8px 16px;cursor:pointer;font-weight:600;transition:all .2s;white-space:nowrap;}
+        .btn-copy:hover{background:#d97706;}
+        .btn-copy.copied{background:var(--success);}
+        .enlace-info{margin-top:12px;font-size:.8rem;color:var(--muted);display:flex;align-items:center;gap:8px;}
+        .enlace-info i{color:#f59e0b;}
+        .enlace-actions{margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;}
+        .btn-whatsapp{background:#25D366;color:white;border:none;border-radius:8px;padding:10px 20px;cursor:pointer;font-weight:600;display:flex;align-items:center;gap:8px;transition:all .2s;text-decoration:none;}
+        .btn-whatsapp:hover{background:#128C7E;}
+        
+        /* Enlaces existentes */
+        .enlaces-existentes{margin-top:16px;}
+        .enlace-item{background:white;border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:10px;}
+        .enlace-item .estado-badge{padding:4px 10px;border-radius:20px;font-size:.7rem;font-weight:700;text-transform:uppercase;}
+        .enlace-item .estado-badge.pendiente{background:rgba(245,158,11,.1);color:#d97706;}
+        .enlace-item .estado-badge.usado{background:rgba(6,214,160,.1);color:var(--success);}
+        .enlace-item .estado-badge.expirado,.enlace-item .estado-badge.cancelado{background:rgba(239,68,68,.1);color:var(--danger);}
+        
+        /* Botón WhatsApp */
+        .btn-whatsapp{background:#25D366;color:white;border:none;border-radius:8px;padding:10px 20px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:8px;transition:all .2s;text-decoration:none;}
+        .btn-whatsapp:hover{background:#128C7E;color:white;}
+        .enlace-actions{margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;}
     </style>
 </head>
 <body>
@@ -321,17 +365,45 @@ $tallas = ['2','4','6','8','10','12','14','16','XS','S','M','L','XL','XXL'];
         </div>
     </div>
 
-    <!-- Opción subir imagen -->
-    <div class="opcion-imagen-card" id="opcionImagenCard">
+    <!-- Selector de Modalidad -->
+    <div class="modalidad-selector">
+        <div class="modalidad-title">
+            <i class="fas fa-list-check"></i>
+            Seleccione una modalidad de registro:
+        </div>
+        <div class="modalidad-options">
+            <label class="modalidad-option active" data-modalidad="manual">
+                <input type="radio" name="modalidad" value="manual" checked onchange="seleccionarModalidad('manual')">
+                <div class="mo-icon"><i class="fas fa-keyboard"></i></div>
+                <div class="mo-title">Registro Manual</div>
+                <div class="mo-desc">El vendedor registra los datos directamente en la tabla</div>
+            </label>
+            <label class="modalidad-option" data-modalidad="imagen">
+                <input type="radio" name="modalidad" value="imagen" onchange="seleccionarModalidad('imagen')">
+                <div class="mo-icon"><i class="fas fa-camera"></i></div>
+                <div class="mo-title">Subir Imagen</div>
+                <div class="mo-desc">El vendedor sube una foto con los datos de integrantes</div>
+            </label>
+            <label class="modalidad-option" data-modalidad="enlace">
+                <input type="radio" name="modalidad" value="enlace" onchange="seleccionarModalidad('enlace')">
+                <div class="mo-icon"><i class="fas fa-link"></i></div>
+                <div class="mo-title">Generar Enlace</div>
+                <div class="mo-desc">Enviar enlace al cliente para que registre sus datos</div>
+            </label>
+        </div>
+    </div>
+
+    <!-- Sección para subir imagen (Modalidad 1) -->
+    <div class="opcion-imagen-card" id="opcionImagenCard" style="display:none;">
         <label class="opcion-toggle">
-            <input type="checkbox" id="chkSubirImagen" onchange="toggleModoImagen()">
+            <input type="checkbox" id="chkSubirImagen" checked onchange="toggleModoImagen()">
             <span class="opcion-toggle-text">
                 <i class="fas fa-camera" style="margin-right:8px;color:var(--success);"></i>
-                Subir lista de integrantes como imagen 
-                <span>(opcional - foto de la lista firmada)</span>
+                Lista de integrantes como imagen 
+                <span>(foto de la lista firmada por el cliente)</span>
             </span>
         </label>
-        <div class="upload-zone" id="uploadZone" style="display:none;" onclick="document.getElementById('inputImagen').click()">
+        <div class="upload-zone" id="uploadZone" onclick="document.getElementById('inputImagen').click()">
             <input type="file" id="inputImagen" accept="image/*" style="display:none;" onchange="handleFileSelect(this)">
             <i class="fas fa-cloud-upload-alt upload-icon"></i>
             <div class="upload-text">Arrastra una imagen aquí o <strong>haz clic para seleccionar</strong></div>
@@ -340,7 +412,7 @@ $tallas = ['2','4','6','8','10','12','14','16','XS','S','M','L','XL','XXL'];
         </div>
     </div>
 
-    <div class="row g-4">
+    <div class="row g-4" id="seccionTablaIntegrantes">
         <!-- Tabla de integrantes -->
         <div class="col-lg-9">
             <div class="card-v" id="tablaIntegrantesCard">
@@ -452,17 +524,57 @@ $tallas = ['2','4','6','8','10','12','14','16','XS','S','M','L','XL','XXL'];
                         <button type="submit" class="btn-v btn-success-v" style="width:100%;justify-content:center;">
                             <i class="fas fa-check-double"></i> Confirmar y Guardar
                         </button>
-						<?php if ($user['rol'] !== 'vendedor'): ?>
-						<a href="diseno.php?pedido_id=<?php echo $pedido['id']; ?>" class="btn-v btn-primary-v" ...>
-							<i class="fas fa-paint-brush"></i> Ir a Diseño
-						</a>
-						<?php endif; ?>
+                                                <?php if ($user['rol'] !== 'vendedor'): ?>
+                                                <a href="diseno.php?pedido_id=<?php echo $pedido['id']; ?>" class="btn-v btn-primary-v" ...>
+                                                        <i class="fas fa-paint-brush"></i> Ir a Diseño
+                                                </a>
+                                                <?php endif; ?>
                     </div>
                 </div>
             </div>
         </div>
     </div>
     </form>
+    
+    <!-- Sección para generar enlace (Modalidad 3) - FUERA del formulario -->
+    <div class="enlace-generado-card" id="enlaceGeneradoCard">
+        <div class="enlace-header">
+            <h5 style="font-family:'Barlow Condensed',sans-serif;font-weight:700;color:var(--text);margin:0;">
+                <i class="fas fa-link" style="color:#f59e0b;margin-right:8px;"></i>
+                Enlace para el Cliente
+            </h5>
+            <button type="button" class="btn-v btn-outline-v" style="padding:6px 12px;font-size:.75rem;" onclick="generarNuevoEnlace()">
+                <i class="fas fa-sync-alt"></i> Generar Nuevo
+            </button>
+        </div>
+        <div class="enlace-url-box">
+            <span class="enlace-url" id="enlaceUrl">Clic en "Generar Nuevo" para crear un enlace...</span>
+            <button type="button" class="btn-copy" id="btnCopiar" onclick="copiarEnlace()">
+                <i class="fas fa-copy"></i> Copiar
+            </button>
+        </div>
+        <div class="enlace-info">
+            <i class="fas fa-info-circle"></i>
+            <span>Este enlace expira en <strong id="enlaceExpiracion">72 horas</strong>. Una vez usado, no podrá volver a utilizarse.</span>
+        </div>
+        <div class="enlace-actions">
+            <a href="#" class="btn-whatsapp" id="btnWhatsapp" target="_blank">
+                <i class="fab fa-whatsapp" style="font-size:1.2rem;"></i>
+                Enviar por WhatsApp
+            </a>
+            <button type="button" class="btn-v btn-outline-v" style="padding:8px 16px;" onclick="enviarPorEmail()">
+                <i class="fas fa-envelope"></i> Enviar por Email
+            </button>
+        </div>
+        
+        <!-- Enlaces existentes del pedido -->
+        <div class="enlaces-existentes" id="enlacesExistentes">
+            <h6 style="font-size:.8rem;font-weight:700;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:1px;">
+                <i class="fas fa-history" style="margin-right:6px;"></i>Enlaces Generados
+            </h6>
+            <div id="listaEnlaces"></div>
+        </div>
+    </div>
     
     <?php elseif (empty($pedidosPendientes) && !isset($pedido)): ?>
     <div class="card-v">
@@ -731,9 +843,211 @@ document.getElementById('formIntegrantes')?.addEventListener('submit', function(
     document.getElementById('integrantesJson').value = JSON.stringify(integrantes);
 });
 
+// ============================================
+// FUNCIONES PARA MODALIDADES DE REGISTRO
+// ============================================
+
+let modalidadActual = 'manual';
+let enlaceGenerado = null;
+let generandoEnlace = false; // Bandera para evitar duplicados
+const pedidoId = <?php echo isset($pedido['id']) ? $pedido['id'] : 0; ?>;
+
+// Seleccionar modalidad
+function seleccionarModalidad(modalidad) {
+    modalidadActual = modalidad;
+    
+    // Actualizar UI de opciones
+    document.querySelectorAll('.modalidad-option').forEach(opt => {
+        opt.classList.remove('active');
+        opt.querySelector('input').checked = false;
+    });
+    const opcionSeleccionada = document.querySelector(`.modalidad-option[data-modalidad="${modalidad}"]`);
+    if (opcionSeleccionada) {
+        opcionSeleccionada.classList.add('active');
+        opcionSeleccionada.querySelector('input').checked = true;
+    }
+    
+    // Mostrar/ocultar secciones según modalidad
+    const opcionImagenCard = document.getElementById('opcionImagenCard');
+    const enlaceGeneradoCard = document.getElementById('enlaceGeneradoCard');
+    const seccionTablaIntegrantes = document.getElementById('seccionTablaIntegrantes');
+    const panelResumen = document.querySelector('.col-lg-3');
+    
+    // Ocultar todo primero
+    if (opcionImagenCard) opcionImagenCard.style.display = 'none';
+    if (enlaceGeneradoCard) enlaceGeneradoCard.classList.remove('show');
+    if (seccionTablaIntegrantes) seccionTablaIntegrantes.style.display = 'flex';
+    if (panelResumen) panelResumen.style.display = 'block';
+    
+    if (modalidad === 'manual') {
+        // Mostrar tabla de integrantes y panel resumen
+        if (seccionTablaIntegrantes) seccionTablaIntegrantes.style.display = 'flex';
+        if (panelResumen) panelResumen.style.display = 'block';
+    } else if (modalidad === 'imagen') {
+        // Mostrar opción de subir imagen
+        if (opcionImagenCard) opcionImagenCard.style.display = 'block';
+        if (seccionTablaIntegrantes) seccionTablaIntegrantes.style.display = 'flex';
+        if (panelResumen) panelResumen.style.display = 'block';
+    } else if (modalidad === 'enlace') {
+        // Mostrar sección de generar enlace
+        if (enlaceGeneradoCard) enlaceGeneradoCard.classList.add('show');
+        // Ocultar tabla de integrantes y panel resumen
+        if (seccionTablaIntegrantes) seccionTablaIntegrantes.style.display = 'none';
+        if (panelResumen) panelResumen.style.display = 'none';
+        
+        // Cargar enlaces existentes (sin generar automáticamente)
+        cargarEnlacesExistentes();
+    }
+}
+
+// Generar nuevo enlace
+async function generarNuevoEnlace() {
+    // Evitar doble ejecución
+    if (generandoEnlace) {
+        console.log('Ya se está generando un enlace...');
+        return;
+    }
+    
+    if (!pedidoId) {
+        alert('No hay un pedido seleccionado.');
+        return;
+    }
+    
+    generandoEnlace = true;
+    
+    const enlaceUrl = document.getElementById('enlaceUrl');
+    const btnCopiar = document.getElementById('btnCopiar');
+    
+    if (enlaceUrl) enlaceUrl.textContent = 'Generando enlace...';
+    if (btnCopiar) btnCopiar.classList.remove('copied');
+    
+    try {
+        const response = await fetch('api/enlaces-registro.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                pedido_id: pedidoId,
+                expiracion_horas: 72
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            enlaceGenerado = data.data;
+            
+            if (enlaceUrl) enlaceUrl.textContent = data.data.url_enlace;
+            
+            // Actualizar botón de WhatsApp
+            const btnWhatsapp = document.getElementById('btnWhatsapp');
+            if (btnWhatsapp) {
+                const mensaje = encodeURIComponent(`Hola! Para registrar los datos de los integrantes de tu pedido #${data.data.pedido_codigo}, por favor ingresa al siguiente enlace:\n\n${data.data.url_enlace}\n\nEste enlace es válido por 72 horas.`);
+                btnWhatsapp.href = `https://wa.me/?text=${mensaje}`;
+            }
+            
+            // Recargar lista de enlaces
+            cargarEnlacesExistentes();
+        } else {
+            if (enlaceUrl) enlaceUrl.textContent = 'Error al generar enlace';
+            alert('Error: ' + (data.error || 'No se pudo generar el enlace'));
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        if (enlaceUrl) enlaceUrl.textContent = 'Error de conexión';
+        alert('Error de conexión al generar el enlace');
+    } finally {
+        // Siempre resetear la bandera
+        generandoEnlace = false;
+    }
+}
+
+// Cargar enlaces existentes del pedido
+async function cargarEnlacesExistentes() {
+    if (!pedidoId) return;
+    
+    const listaEnlaces = document.getElementById('listaEnlaces');
+    if (!listaEnlaces) return;
+    
+    try {
+        const response = await fetch(`api/enlaces-registro.php?pedido_id=${pedidoId}`);
+        const data = await response.json();
+        
+        if (data.success && data.data.enlaces.length > 0) {
+            listaEnlaces.innerHTML = data.data.enlaces.map(e => `
+                <div class="enlace-item">
+                    <div>
+                        <div style="font-size:.75rem;color:var(--text);font-family:monospace;word-break:break-all;max-width:300px;">
+                            ${e.url_enlace.substring(0, 50)}...
+                        </div>
+                        <div style="font-size:.7rem;color:var(--muted);margin-top:4px;">
+                            ${e.fecha_creacion ? new Date(e.fecha_creacion).toLocaleString('es-PE') : ''} 
+                            ${e.fecha_uso ? '· Usado: ' + new Date(e.fecha_uso).toLocaleString('es-PE') : ''}
+                        </div>
+                    </div>
+                    <span class="estado-badge ${e.estado}">${e.estado}</span>
+                </div>
+            `).join('');
+        } else {
+            listaEnlaces.innerHTML = '<div style="font-size:.75rem;color:var(--muted);font-style:italic;">No hay enlaces generados</div>';
+        }
+    } catch (error) {
+        console.error('Error cargando enlaces:', error);
+        listaEnlaces.innerHTML = '<div style="font-size:.75rem;color:var(--danger);">Error al cargar enlaces</div>';
+    }
+}
+
+// Copiar enlace al portapapeles
+function copiarEnlace() {
+    const enlaceUrl = document.getElementById('enlaceUrl');
+    const btnCopiar = document.getElementById('btnCopiar');
+    
+    if (!enlaceUrl || !enlaceUrl.textContent || 
+        enlaceUrl.textContent === 'Generando enlace...' || 
+        enlaceUrl.textContent.includes('Clic en') ||
+        enlaceUrl.textContent.includes('Error')) {
+        alert('Primero genera un enlace válido');
+        return;
+    }
+    
+    navigator.clipboard.writeText(enlaceUrl.textContent).then(() => {
+        if (btnCopiar) {
+            btnCopiar.classList.add('copied');
+            btnCopiar.innerHTML = '<i class="fas fa-check"></i> Copiado';
+            setTimeout(() => {
+                btnCopiar.classList.remove('copied');
+                btnCopiar.innerHTML = '<i class="fas fa-copy"></i> Copiar';
+            }, 2000);
+        }
+    }).catch(err => {
+        console.error('Error al copiar:', err);
+        alert('No se pudo copiar el enlace');
+    });
+}
+
+// Enviar por email
+function enviarPorEmail() {
+    const enlaceUrl = document.getElementById('enlaceUrl');
+    if (!enlaceUrl || !enlaceUrl.textContent || 
+        enlaceUrl.textContent === 'Generando enlace...' || 
+        enlaceUrl.textContent.includes('Clic en') ||
+        enlaceUrl.textContent.includes('Error')) {
+        alert('Primero genera un enlace válido');
+        return;
+    }
+    
+    const asunto = encodeURIComponent('Registro de Integrantes - VIZENGO');
+    const cuerpo = encodeURIComponent(`Hola!\n\nPara registrar los datos de los integrantes de tu pedido, por favor ingresa al siguiente enlace:\n\n${enlaceUrl.textContent}\n\nEste enlace es válido por 72 horas.\n\nSaludos,\nEquipo VIZENGO`);
+    
+    window.location.href = `mailto:?subject=${asunto}&body=${cuerpo}`;
+}
+
 // Iniciar con filas según cantidad máxima de kits
 document.addEventListener('DOMContentLoaded', function() {
     actualizarResumen();
+    
+    // Inicializar modalidad por defecto
+    seleccionarModalidad('manual');
+    
     <?php if (empty($integrantes)): ?>
     // Crear filas según la cantidad máxima de kits (o 1 como mínimo si no hay kits definidos)
     const filasIniciales = cantidadMaximaKits > 0 ? cantidadMaximaKits : 1;
