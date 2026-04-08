@@ -5,6 +5,7 @@
  * 
  * Contenido:
  * - Parte 01: Resumen de tallas dividido por sexo (Hombres y Mujeres)
+ * - Detalles del Kit: Tabla con tipo de camiseta, cuello, tela, talla, cantidad, precio y subtotal
  * - Parte 02: Tabla de integrantes con datos completos
  */
 
@@ -57,6 +58,16 @@ if (empty($integrantes)) {
     http_response_code(400);
     exit('No hay integrantes registrados para este pedido');
 }
+
+// Obtener los kits del pedido
+$stmt = $db->prepare("SELECT camiseta_tipo, camiseta_cuello, camiseta_tela, camiseta_talla, 
+                              short_tipo, short_tela, short_talla, 
+                              cantidad, precio_unitario, subtotal 
+                      FROM kits 
+                      WHERE pedido_id = ? 
+                      ORDER BY id ASC");
+$stmt->execute([$pedidoId]);
+$kits = $stmt->fetchAll();
 
 // Función para convertir texto UTF-8 a ISO-8859-1 para FPDF
 function txt($texto) {
@@ -161,9 +172,9 @@ class IntegrantesPDF extends FPDF {
         $this->SetFont('Helvetica', 'I', 8);
         $this->SetTextColor(128, 128, 128);
         $this->Cell(0, 5, txt('Todo contrato se realiza con el 50% de adelanto y el 50% al momento de la entrega.'), 0, 1, 'C');
-		$this->Cell(0, 5, txt('Una vez aprobado el diseño previo; No hay derecho a correcciones, reclamos y/o devoluciones.'), 0, 1, 'C');
-	    $this->Cell(0, 5, txt('Dentro del diseño digital se incluye el logo de la tienda.'), 0, 1, 'C');
-		$this->Cell(0, 5, txt('No colocamos marcas registradas. Pasado los 15 dias, No hay lugar a reclamo.'), 0, 1, 'C');
+                $this->Cell(0, 5, txt('Una vez aprobado el diseño previo; No hay derecho a correcciones, reclamos y/o devoluciones.'), 0, 1, 'C');
+            $this->Cell(0, 5, txt('Dentro del diseño digital se incluye el logo de la tienda.'), 0, 1, 'C');
+                $this->Cell(0, 5, txt('No colocamos marcas registradas. Pasado los 15 dias, No hay lugar a reclamo.'), 0, 1, 'C');
         $this->Cell(0, 5, txt('Fecha de generacion: ' . date('d/m/Y H:i:s')), 0, 0, 'C');
     }
 }
@@ -273,6 +284,103 @@ $pdf->SetFont('Helvetica', '', 10);
 $pdf->SetTextColor(30, 30, 30);
 $totalIntegrantes = count($integrantes);
 $pdf->Cell(0, 6, txt('Total General de Integrantes: ' . $totalIntegrantes), 0, 1, 'C');
+
+// =====================================================
+// PARTE 01.5: DETALLES DEL KIT
+// =====================================================
+if (!empty($kits)) {
+    $pdf->Ln(8);
+    $pdf->SetFont('Helvetica', 'B', 11);
+    $pdf->SetFillColor(43, 79, 255);
+    $pdf->SetTextColor(255, 255, 255);
+    $pdf->Cell(0, 8, '  ' . txt('DETALLES DEL KIT'), 0, 1, 'L', true);
+    $pdf->Ln(3);
+
+    // Encabezados de tabla de kits
+    $pdf->SetFillColor(240, 244, 255);
+    $pdf->SetTextColor(30, 30, 30);
+    $pdf->SetFont('Helvetica', 'B', 8);
+
+    // Anchos: #(8), Tipo Camiseta(38), Cuello(25), Tela(30), Talla(20), Cant.(15), P.U.(18), Subtotal(18)
+    $pdf->Cell(8, 7, txt('Nro'), 1, 0, 'C', true);
+    $pdf->Cell(38, 7, txt('Tipo Camiseta'), 1, 0, 'C', true);
+    $pdf->Cell(25, 7, txt('Cuello'), 1, 0, 'C', true);
+    $pdf->Cell(30, 7, txt('Tela'), 1, 0, 'C', true);
+    $pdf->Cell(20, 7, txt('Talla'), 1, 0, 'C', true);
+    $pdf->Cell(15, 7, txt('Cant.'), 1, 0, 'C', true);
+    $pdf->Cell(18, 7, txt('P.U.'), 1, 0, 'C', true);
+    $pdf->Cell(18, 7, txt('Subtotal'), 1, 1, 'C', true);
+
+    $pdf->SetFont('Helvetica', '', 8);
+    $pdf->SetTextColor(30, 30, 30);
+
+    $kitCorrelativo = 1;
+    foreach ($kits as $kit) {
+        // Verificar si necesitamos nueva pagina
+        if ($pdf->GetY() > 260) {
+            $pdf->AddPage();
+            // Repetir encabezados en nueva pagina
+            $pdf->SetFont('Helvetica', 'B', 8);
+            $pdf->SetFillColor(240, 244, 255);
+            $pdf->SetTextColor(30, 30, 30);
+            $pdf->Cell(8, 7, txt('Nro'), 1, 0, 'C', true);
+            $pdf->Cell(38, 7, txt('Tipo Camiseta'), 1, 0, 'C', true);
+            $pdf->Cell(25, 7, txt('Cuello'), 1, 0, 'C', true);
+            $pdf->Cell(30, 7, txt('Tela'), 1, 0, 'C', true);
+            $pdf->Cell(20, 7, txt('Talla'), 1, 0, 'C', true);
+            $pdf->Cell(15, 7, txt('Cant.'), 1, 0, 'C', true);
+            $pdf->Cell(18, 7, txt('P.U.'), 1, 0, 'C', true);
+            $pdf->Cell(18, 7, txt('Subtotal'), 1, 1, 'C', true);
+            $pdf->SetFont('Helvetica', '', 8);
+        }
+
+        // Color de fondo alternado
+        if ($kitCorrelativo % 2 == 0) {
+            $pdf->SetFillColor(248, 250, 255);
+        } else {
+            $pdf->SetFillColor(255, 255, 255);
+        }
+
+        // Preparar datos del kit
+        $tipoCamiseta = txt(substr($kit['camiseta_tipo'] ?? '-', 0, 22));
+        $cuello = txt($kit['camiseta_cuello'] ?? '-');
+        $tela = txt(substr($kit['camiseta_tela'] ?? '-', 0, 18));
+        $tallaKit = txt(substr($kit['camiseta_talla'] ?? '-', 0, 12));
+        $cantidad = intval($kit['cantidad']);
+        $precioUnit = floatval($kit['precio_unitario']);
+        $subtotalKit = floatval($kit['subtotal']);
+
+        $pdf->Cell(8, 6, $kitCorrelativo, 1, 0, 'C', true);
+        $pdf->Cell(38, 6, $tipoCamiseta, 1, 0, 'L', true);
+        $pdf->Cell(25, 6, $cuello, 1, 0, 'C', true);
+        $pdf->Cell(30, 6, $tela, 1, 0, 'L', true);
+        $pdf->Cell(20, 6, $tallaKit, 1, 0, 'C', true);
+        $pdf->Cell(15, 6, $cantidad, 1, 0, 'C', true);
+        $pdf->Cell(18, 6, 'S/ ' . number_format($precioUnit, 2), 1, 0, 'R', true);
+        $pdf->Cell(18, 6, 'S/ ' . number_format($subtotalKit, 2), 1, 1, 'R', true);
+
+        $kitCorrelativo++;
+    }
+
+    // Total general de kits
+    $totalKits = 0;
+    $totalPrecioKits = 0;
+    foreach ($kits as $kit) {
+        $totalKits += intval($kit['cantidad']);
+        $totalPrecioKits += floatval($kit['subtotal']);
+    }
+    $pdf->SetFont('Helvetica', 'B', 9);
+    $pdf->SetFillColor(240, 244, 255);
+    $pdf->SetTextColor(43, 79, 255);
+    $pdf->Cell(8, 7, '', 0, 0);
+    $pdf->Cell(38, 7, '', 0, 0);
+    $pdf->Cell(25, 7, '', 0, 0);
+    $pdf->Cell(30, 7, '', 0, 0);
+    $pdf->Cell(20, 7, txt('TOTAL'), 1, 0, 'C', true);
+    $pdf->Cell(15, 7, $totalKits, 1, 0, 'C', true);
+    $pdf->Cell(18, 7, '', 1, 0, 'C', true);
+    $pdf->Cell(18, 7, 'S/ ' . number_format($totalPrecioKits, 2), 1, 1, 'R', true);
+}
 
 $pdf->Ln(8);
 
