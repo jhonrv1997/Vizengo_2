@@ -89,9 +89,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!empty($clienteCelular)) {
                 $stmt = $db->prepare("UPDATE clientes SET celular = ? WHERE id = ?");
                 $stmt->execute([$clienteCelular, $clienteId]);
-            }	
+            }   
         } // Registra clientes nuevos automaticamente
-		 else {
+                 else {
             $stmt = $db->prepare("INSERT INTO clientes (nombre, celular) VALUES (?, ?)");
             $stmt->execute([$clienteNombre, $clienteCelular]);
             $clienteId = $db->lastInsertId();
@@ -142,10 +142,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Insertar kits
         if (!empty($_POST['kits']) && is_array($_POST['kits'])) {
             $stmtKit = $db->prepare("INSERT INTO kits (
-                pedido_id, camiseta_tipo, camiseta_tela, camiseta_talla,
+                pedido_id, camiseta_tipo, camiseta_cuello, camiseta_tela, camiseta_talla,
                 short_tipo, short_tela, short_talla, medias_tipo, medias_detalles,
                 cantidad, precio_unitario, subtotal
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             
             foreach ($_POST['kits'] as $kit) {
                 $cantidad = intval($kit['cantidad'] ?? 1);
@@ -155,6 +155,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmtKit->execute([
                     $pedidoId,
                     sanitize($kit['camiseta_tipo'] ?? ''),
+                    sanitize($kit['camiseta_cuello'] ?? ''),
                     sanitize($kit['camiseta_tela'] ?? ''),
                     sanitize($kit['camiseta_talla'] ?? ''),
                     sanitize($kit['short_tipo'] ?? ''),
@@ -217,8 +218,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $rutaDestino = $uploadDir . $nombreArchivo;
                     
                     if (move_uploaded_file($tmpName, $rutaDestino)) {
-					 $stmt = $db->prepare("INSERT INTO disenos_iniciales (pedido_id, imagen_path, observaciones) VALUES (?, ?, ?)");
-					 $stmt->execute([$pedidoId, 'uploads/referencias/' . $nombreArchivo, '']);
+                                         $stmt = $db->prepare("INSERT INTO disenos_iniciales (pedido_id, imagen_path, observaciones) VALUES (?, ?, ?)");
+                                         $stmt->execute([$pedidoId, 'uploads/referencias/' . $nombreArchivo, '']);
                     }
                 }
             }
@@ -485,6 +486,20 @@ $fechaHoy = str_replace(array_keys($meses), array_values($meses), $fechaHoy);
                                                 <option value="OTROS">OTROS</option>
                                             </select>
                                             <input type="text" class="field-ctrl mt-1 kit-camiseta-otros" placeholder="Especifique..." style="display:none;">
+                                        </div>
+                                        <div class="field-group" style="margin-bottom:8px;">
+                                            <label class="field-lbl">Tipo de Cuello</label>
+                                            <select class="field-ctrl kit-camiseta-cuello" onchange="toggleOtros(this)">
+                                                <option value="">-- Seleccionar --</option>
+                                                <option>Redondo</option>
+                                                <option>Redondo cruzado</option>
+                                                <option>Cuello chino</option>
+                                                <option>Cuello V</option>
+                                                <option>Cuello V cruzado</option>
+                                                <option>Cuello camisero</option>
+                                                <option value="OTROS">Otros</option>
+                                            </select>
+                                            <input type="text" class="field-ctrl mt-1 kit-camiseta-cuello-otros" placeholder="Especifique tipo de cuello..." style="display:none;">
                                         </div>
                                         <div class="field-group" style="margin-bottom:8px;">
                                             <label class="field-lbl">Tela</label>
@@ -900,6 +915,9 @@ function agregarKitPrincipal() {
     const camisetaTipo = document.querySelector('.kit-camiseta-tipo').value;
     const camisetaTela = document.querySelector('.kit-camiseta-tela').value;
     const camisetaTalla = document.querySelector('.kit-camiseta-talla').value || '-';
+    const camisetaCuello = document.querySelector('.kit-camiseta-cuello').value || '';
+    const cuelloOtrosInput = document.querySelector('.kit-camiseta-cuello-otros');
+    const camisetaCuelloTexto = (camisetaCuello === 'OTROS' && cuelloOtrosInput) ? cuelloOtrosInput.value : camisetaCuello;
     
     const shortTipo = document.querySelector('.kit-short-tipo').value;
     const shortTela = document.querySelector('.kit-short-tela').value;
@@ -910,6 +928,9 @@ function agregarKitPrincipal() {
     
     // Construir descripción
     let descripcion = camisetaTipo;
+    if (camisetaCuelloTexto) {
+        descripcion += ' (Cuello: ' + camisetaCuelloTexto + ')';
+    }
     if (shortTipo && shortTipo !== 'NINGUNO') {
         descripcion += ' + ' + shortTipo;
     }
@@ -924,6 +945,7 @@ function agregarKitPrincipal() {
         subtotal: cantidad * precio,
         kit: {
             camiseta_tipo: camisetaTipo,
+            camiseta_cuello: camisetaCuelloTexto,
             camiseta_tela: camisetaTela,
             camiseta_talla: camisetaTalla,
             short_tipo: shortTipo,
@@ -1242,7 +1264,7 @@ document.getElementById('formPedido').addEventListener('submit', function(e) {
         return false;
     }
     
-	// Validar que el adelanto sea mayor a 0
+        // Validar que el adelanto sea mayor a 0
 const adelantoInput = document.getElementById('adelantoInputDisplay');
 const adelantoValue = parseFloat(adelantoInput.value) || 0;
 if (adelantoValue <= 0 || adelantoInput.value.trim() === '') {
