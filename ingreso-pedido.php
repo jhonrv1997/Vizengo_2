@@ -491,7 +491,7 @@ $fechaHoy = str_replace(array_keys($meses), array_values($meses), $fechaHoy);
                                             <label class="field-lbl">Tipo de Cuello</label>
                                             <select class="field-ctrl kit-camiseta-cuello" onchange="toggleOtros(this)">
                                                 <option value="">-- Seleccionar --</option>
-                                                <option>Redondo</option>
+                                                <option selected>Redondo</option>
                                                 <option>Redondo cruzado</option>
                                                 <option>Cuello chino</option>
                                                 <option>Cuello V</option>
@@ -535,8 +535,8 @@ $fechaHoy = str_replace(array_keys($meses), array_values($meses), $fechaHoy);
                                         <div class="field-group" style="margin-bottom:8px;">
                                             <label class="field-lbl">Tipo</label>
                                             <select class="field-ctrl kit-short-tipo" onchange="toggleOtros(this)">
-                                                <option value="NINGUNO">NINGUNO</option>
-                                                <option selected>SHORT</option>
+                                                <option selected value="NINGUNO">NINGUNO</option>
+                                                <option>SHORT</option>
                                                 <option>SNICKER</option>
                                                 <option>BASQUET</option>
                                                 <option>SHORT FALDA</option>
